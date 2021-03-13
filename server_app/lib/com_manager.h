@@ -20,7 +20,6 @@ typedef struct __packet {
     const char* _payload;   //Dados da mensagem
 } packet;
 
-int open_socket();
 void *client_thread(void *sockfd);
 int read_from_socket();
 int write_on_socket();
