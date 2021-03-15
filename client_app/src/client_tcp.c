@@ -14,7 +14,7 @@
 int main(int argc, char *argv[]) {
   
   int sockfd, n;
-  char buffer[256];
+  char buffer[BUFFER_SIZE];
 
   // Validando dados de entrada
   if (argc < 4) {
@@ -31,29 +31,37 @@ int main(int argc, char *argv[]) {
   }
   // ..
 
-  // Iniciando leitura de comandos
-  printf("> ");
-  bzero(buffer, 256);
-  fgets(buffer, 256, stdin);
-  // ..
-    
-	// Escrevendo no socket
-	n = write(sockfd, buffer, strlen(buffer));
+  // Loop de interação
+  while (5>1)
+  {
+    // Iniciando leitura de comandos
+    printf("> ");
+    bzero(buffer, BUFFER_SIZE);
+    fgets(buffer, BUFFER_SIZE, stdin);
+    // ..
+      
+    // Escrevendo no socket
+    n = write(sockfd, buffer, strlen(buffer));
     if (n < 0) 
-		printf("ERROR writing to socket\n");
+      printf("ERROR writing to socket\n");
 
-    bzero(buffer,256);
-	// ..
+    bzero(buffer, BUFFER_SIZE);
+    // ..
 
-	// Lendo do socket
-  packet received;
-  
+    // Lendo do socket
+    packet received;
+    read_packet(sockfd, &received, buffer);
+    bzero(&received, sizeof(packet));
+    // ..
+
+  /*bzero(buffer, 256);
   n = read(sockfd, buffer, 256);
   if (n < 0) 
 	  printf("ERROR reading from socket\n");
 
   printf("%s\n", buffer);
-  // ..
+  // ..*/
+  }
 
   // Fechando o socket
 	close(sockfd);

@@ -12,44 +12,61 @@
 
 #define PORT 4000
 
-void *client_thread(void *sockfd)
-{
-	int n;
-	char buffer[256];
+void *client_thread(void *sockfd) {
 	
-	bzero(buffer, 256);
-		
-	/* read from the socket */
-	n = read(*(int *) sockfd, buffer, 256);
-	if (n < 0) 
-		printf("ERROR reading from socket");
-	printf("Here is the message: %s\n", buffer);
+	int n;
+	char buffer[BUFFER_SIZE];
 
-	/* create packet to send*/
-	packet package;
-	package.type = DATA;
-	package.seqn = 0;
-	package.timestamp = time(NULL);
-	package._payload = "I hear you babe!";
-	package.length = 16;
+	while(strcmp(buffer,"exit\n") != 0){
+		listen(*(int *) sockfd, 10);
+			
+		/* read from the socket */
+		bzero(buffer, BUFFER_SIZE);
+		n = read(*(int *) sockfd, buffer, BUFFER_SIZE);
+		if (n < 0) 
+			printf("ERROR reading from socket");
+		printf("Here is the message: %s", buffer);
 
-	/* write in the socket */
-	n = write(*(int *) sockfd, package._payload, strlen(package._payload));
-	if (n < 0) 
-		printf("ERROR writing to socket");
+		// Criando pacote para enviar
+		packet package;
+		package.type = DATA;
+		package.seqn = 0;
+		package.timestamp = time(NULL);
+		//printf("Time: %ld\n", package.timestamp);
+		package._payload = "Message received!";
+		package.length = 18;
+		// ..
 
+		// Enviar mensagem
+		send_packet(*(int *) sockfd, &package);
+		// ..
+	}
+
+	printf("Encerrando conexao...\n");
 	close(*(int *) sockfd);
 
 	pthread_exit(NULL);
 }
 
-int send_packet(int socket, packet package)
-{
-	int n = write(socket, &package, sizeof(package));
+int send_packet(int socket, packet *package) {
+	
+	int n;
+
+	// Enviando metadados
+	n = write(socket, package, sizeof(packet));
 	if (n < 0){
-		printf("ERROR writing to socket");
+		printf("ERROR writing metadata to socket\n");
 		return -1;
 	}
+	// ..
+
+	// Enviando payload
+	n = write(socket, package->_payload, package->length);
+	if (n < 0){
+		printf("ERROR writing data to socket\n");
+		return -1;
+	}
+	// ..
 
 	return 0;
 	

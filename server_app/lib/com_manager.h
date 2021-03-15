@@ -3,6 +3,8 @@
 
 #define DATA 1
 #define CMD 2
+#define BACKLOG_MAX 10
+#define BUFFER_SIZE 256
 
 typedef struct __notification {
     uint32_t id;            // Identificador da notificação (sugere-se um identificador único)
@@ -23,4 +25,4 @@ typedef struct __packet {
 void *client_thread(void *sockfd);
 int read_from_socket();
 int write_on_socket();
-int send_packet(int socket, packet package);
+int send_packet(int socket, packet *package);

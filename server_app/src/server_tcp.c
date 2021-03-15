@@ -14,7 +14,6 @@
 #include "../lib/com_manager.h"
 
 #define PORT 4000
-#define BACKLOG_MAX 10
 
 // SOMENTE PARA TESTES ------------------------------------------
 #define handle_error_en(en, msg) \
@@ -48,7 +47,7 @@ int main(int argc, char *argv[])
   // ..
 
   // Loop de leitura por novas requisições de conexão
-  while (5>1){
+  while (2>1){  // TODO: condição de saida
     if (listen(sockfd, BACKLOG_MAX) == 0)
     {
       int newsockfd;
@@ -63,7 +62,6 @@ int main(int argc, char *argv[])
       pthread_t th;
       pthread_create(&th, NULL, client_thread, &newsockfd);
       // ..
-
     }
   }
   // ..
