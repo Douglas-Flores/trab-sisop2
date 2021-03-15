@@ -62,7 +62,7 @@ int read_packet(int socket, packet *package, char *buffer) {
     package->type = buffer[0] | buffer[1] << 8;
     package->seqn = buffer[2] | buffer[3] << 8;
     package->length = buffer[4] | buffer[5] << 8;
-    package->timestamp = buffer [8] | buffer[9] | buffer[10] | buffer[11] | buffer [12] | buffer [13] | buffer[14] | buffer[15] >> 8;
+    //package->timestamp = buffer [8] | buffer[9] | buffer[10] | buffer[11] | buffer [12] | buffer [13] | buffer[14] | buffer[15];
     package->_payload = payload;
     for(int i = 0; i < sizeof(packet); i++) {
 
@@ -73,18 +73,5 @@ int read_packet(int socket, packet *package, char *buffer) {
         payload[i] = buffer[sizeof(packet)+i];
     }
 
-    printf("Tipo: %d\n", package->type);
-    printf("Seqn: %d\n", package->seqn);
-    printf("Length: %d\n", package->length);
-    printf("Time: %ld\n", package->timestamp);
-
-
     return n;
 }
-/*
-    uint16_t type;          //Tipo do pacote (p.ex. DATA | CMD)
-    uint16_t seqn;          //Número de sequência
-    uint16_t length;        //Comprimento do payload 
-    uint16_t timestamp;     // Timestamp do dado
-    const char* _payload; 
-*/
