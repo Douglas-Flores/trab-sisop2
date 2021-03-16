@@ -50,7 +50,7 @@ int connect_to_server(char *end, char *port){
 
 int read_packet(int socket, packet *package, char *buffer) {
     int n;
-    char payload[128];
+    char *payload = malloc(sizeof(char)*128);
 
     // Lendo bytestream
     n = read(socket, buffer, BUFFER_SIZE);
@@ -64,14 +64,66 @@ int read_packet(int socket, packet *package, char *buffer) {
     package->length = buffer[4] | buffer[5] << 8;
     //package->timestamp = buffer [8] | buffer[9] | buffer[10] | buffer[11] | buffer [12] | buffer [13] | buffer[14] | buffer[15];
     package->_payload = payload;
-    for(int i = 0; i < sizeof(packet); i++) {
-
-    }
 
     // Montando payload
-    for(int i = 0; i < 18; i++) {
+    for(int i = 0; i < package->length; i++) {
         payload[i] = buffer[sizeof(packet)+i];
     }
+
+    return n;
+}
+
+int send_packet(int socket, packet *package) {
+	
+	int n;
+
+	// Enviando metadados
+	/*n = write(socket, package, sizeof(packet));
+	if (n < 0){
+		printf("ERROR writing metadata to socket\n");
+		return -1;
+	}*/
+	// ..
+
+	// Enviando payload
+	n = write(socket, package->_payload, package->length);
+	if (n < 0){
+		printf("ERROR writing data to socket\n");
+		return -1;
+	}
+	// ..
+
+	return 0;
+	
+}
+
+int authenticate(int socket, char *username) {
+    char buffer[BUFFER_SIZE];
+    int n=0;
+
+    // Enviando nome de usuário
+    packet package;
+    package.type = DATA;
+    package.seqn = 0;
+    package.timestamp = time(NULL);
+    package._payload = username;
+    package.length = strlen(username);
+    send_packet(socket, &package);
+    // ..
+
+    // Recebendo resposta
+    packet *rcv = (packet *) malloc(sizeof(packet));
+    read_packet(socket, rcv, buffer);
+    // ..
+
+    // Verificando resposta
+    if(strcmp(rcv->_payload, "success") == 0)
+        n = 0;
+    else
+        n = -1;
+    // ..
+    free(rcv->_payload);
+    free(rcv);
 
     return n;
 }

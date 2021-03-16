@@ -9,6 +9,7 @@
 #include <pthread.h>
 #include <errno.h>
 #include "../lib/com_manager.h"
+#include "../lib/profile_manager.h"
 
 #define PORT 4000
 
@@ -16,36 +17,50 @@ void *client_thread(void *sockfd) {
 	
 	int n;
 	char buffer[BUFFER_SIZE];
+	setbuf(stdout, NULL);
+
+	if (authenticate(*(int *) sockfd) < 0) {
+		printf("Falha de Autenticacao.\n");
+		close(*(int *) sockfd);
+		return 0;
+	}
 
 	while(strcmp(buffer,"exit\n") != 0){
-		listen(*(int *) sockfd, 10);
-			
-		/* read from the socket */
+
+		// Lendo do Socket
 		bzero(buffer, BUFFER_SIZE);
 		n = read(*(int *) sockfd, buffer, BUFFER_SIZE);
-		if (n < 0) 
+		if (n < 0) {
 			printf("ERROR reading from socket");
-		printf("Here is the message: %s", buffer);
+			continue;
+		}
+		else if (buffer[0] == '\0'){
+			printf("No response from user.\n");
+			break;
+		}
+		else
+			printf("Here is the message: %s", buffer);
+		// ..
 
 		// Criando pacote para enviar
 		packet package;
 		package.type = DATA;
 		package.seqn = 0;
 		package.timestamp = time(NULL);
-		//printf("Time: %ld\n", package.timestamp);
 		package._payload = "Message received!";
 		package.length = 18;
 		// ..
 
 		// Enviar mensagem
-		send_packet(*(int *) sockfd, &package);
+		if (send_packet(*(int *) sockfd, &package) < 0)
+			break;
 		// ..
 	}
 
-	printf("Encerrando conexao...\n");
+	printf("Closing connection...\n");
 	close(*(int *) sockfd);
 
-	pthread_exit(NULL);
+	return 0;
 }
 
 int send_packet(int socket, packet *package) {
@@ -56,7 +71,7 @@ int send_packet(int socket, packet *package) {
 	n = write(socket, package, sizeof(packet));
 	if (n < 0){
 		printf("ERROR writing metadata to socket\n");
-		return -1;
+		n = -1;
 	}
 	// ..
 
@@ -64,10 +79,73 @@ int send_packet(int socket, packet *package) {
 	n = write(socket, package->_payload, package->length);
 	if (n < 0){
 		printf("ERROR writing data to socket\n");
-		return -1;
+		n = -1;
 	}
 	// ..
 
-	return 0;
+	return n;
 	
+}
+
+int read_packet(int socket, packet *package, char *buffer) {
+    int n;
+    char payload[128]="";
+
+    // Lendo bytestream
+    n = read(socket, buffer, BUFFER_SIZE);
+    if (n < 0) {
+	    printf("ERROR reading from socket\n");
+		n = -1;
+	}
+    // ..
+
+    // Montando pacote
+    package->type = buffer[0] | buffer[1] << 8;
+    package->seqn = buffer[2] | buffer[3] << 8;
+    package->length = buffer[4] | buffer[5] << 8;
+    //package->timestamp = buffer [8] | buffer[9] | buffer[10] | buffer[11] | buffer [12] | buffer [13] | buffer[14] | buffer[15];
+    package->_payload = payload;
+
+    // Montando payload
+    for(int i = 0; i < 7; i++) {
+        payload[i] = buffer[i];
+    }
+	printf("Here is the message: %s\n", payload);
+
+    return n;
+}
+
+int authenticate(int socket){
+	int n;
+	char buffer[BUFFER_SIZE];
+
+	// Lendo username
+	bzero(buffer, BUFFER_SIZE);
+	n = read(socket, buffer, BUFFER_SIZE);
+	if (n < 0) 
+		printf("ERROR reading from socket");
+	printf("Username: %s\n", buffer);
+	// ..
+
+	// Verificando existência do usuário
+	n = get_profile(buffer);
+	// ..
+
+	// Criando pacote para enviar
+	packet package;
+	package.type = DATA;
+	package.seqn = 0;
+	package.timestamp = time(NULL);
+	if (n == 0)
+		package._payload = "success";
+	else
+		package._payload = "failure";
+	package.length = strlen(package._payload) + 1;
+	// ..
+
+	// Enviando resposta
+	send_packet(socket, &package);
+	// ..
+
+	return n;
 }

@@ -15,3 +15,5 @@ typedef struct __packet {
 
 int connect_to_server(char *end, char *port);
 int read_packet(int socket, packet *package, char *buffer);
+int send_packet(int socket, packet *package);
+int authenticate(int socket, char *username);

@@ -31,40 +31,53 @@ int main(int argc, char *argv[]) {
   }
   // ..
 
+  // Autenticação
+  if (authenticate(sockfd, argv[1]) < 0) {
+    printf("Falha de Autenticacao. Tente novamente.\n");
+    close(sockfd);
+    return 0;
+  }
+  // ..
+
   // Loop de interação
-  while (5>1)
-  {
+  while (strcmp(buffer, "exit\n") != 0) {
     // Iniciando leitura de comandos
     printf("> ");
     bzero(buffer, BUFFER_SIZE);
     fgets(buffer, BUFFER_SIZE, stdin);
     // ..
+
+    // Checando comando de exit
+    if (strcmp(buffer, "exit\n") == 0)
+      break;
+    // ..
       
     // Escrevendo no socket
-    n = write(sockfd, buffer, strlen(buffer));
-    if (n < 0) 
-      printf("ERROR writing to socket\n");
+    if(strlen(buffer) > 1) {
+      packet package;
+      package.type = DATA;
+      package.seqn = 0;
+      package.timestamp = time(NULL);
+      package._payload = buffer;
+      package.length = strlen(buffer);
+      send_packet(sockfd, &package);
+    }
 
-    bzero(buffer, BUFFER_SIZE);
-    // ..
+    bzero(buffer, BUFFER_SIZE); // limpando o buffer para leitura
 
     // Lendo do socket
     packet received;
     read_packet(sockfd, &received, buffer);
+    printf("%s\n", received._payload);
+    free(received._payload);
     bzero(&received, sizeof(packet));
     // ..
 
-  /*bzero(buffer, 256);
-  n = read(sockfd, buffer, 256);
-  if (n < 0) 
-	  printf("ERROR reading from socket\n");
-
-  printf("%s\n", buffer);
-  // ..*/
   }
 
   // Fechando o socket
 	close(sockfd);
+  printf("Connection closed.\n");
   // ..
   
   return 0;

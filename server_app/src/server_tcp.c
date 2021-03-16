@@ -12,6 +12,7 @@
 #include <time.h>
 #include <arpa/inet.h>
 #include "../lib/com_manager.h"
+#include "../lib/profile_manager.h"
 
 #define PORT 4000
 
@@ -47,16 +48,17 @@ int main(int argc, char *argv[])
   // ..
 
   // Loop de leitura por novas requisições de conexão
-  while (2>1){  // TODO: condição de saida
-    if (listen(sockfd, BACKLOG_MAX) == 0)
-    {
+  while (2>1) {  // TODO: condição de saida
+    if (listen(sockfd, BACKLOG_MAX) == 0) {
       int newsockfd;
       socklen_t clilen;
       struct sockaddr_in cli_addr;
 
+      // Abrindo um novo socket
       clilen = sizeof(struct sockaddr_in);
       if ((newsockfd = accept(sockfd, (struct sockaddr *) &cli_addr, &clilen)) == -1)
         printf("ERROR on accept\n");
+      // ..
 
       // Criando thread para o novo usuário conectado  
       pthread_t th;
