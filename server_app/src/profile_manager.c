@@ -1,7 +1,7 @@
 #include "../lib/database.h"
 #include "../lib/profile_manager.h"
 
-int load_profiles(profile_list list) {
+int load_profiles(profile_list *profiles) {
     return 0;
 }
 
