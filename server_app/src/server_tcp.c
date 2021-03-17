@@ -47,6 +47,12 @@ int main(int argc, char *argv[])
 		printf("ERROR on binding\n");
   // ..
 
+  // Carregando estruturas de dados
+  profile_list profiles;
+  profiles.next = NULL;
+  load_profiles(&profiles);
+  // ..
+
   // Loop de leitura por novas requisições de conexão
   while (2>1) {  // TODO: condição de saida
     if (listen(sockfd, BACKLOG_MAX) == 0) {

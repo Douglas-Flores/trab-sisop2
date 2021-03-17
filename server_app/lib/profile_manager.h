@@ -13,7 +13,6 @@ typedef struct __profile {
 typedef struct __profile_list {
     profile *profile;               // Perfil
     struct __profile_list *next;    // Próximo da lista
-    struct __profile_list *prev;    // Anterior da lista
 } profile_list;
 
 typedef struct __notification {
@@ -27,7 +26,6 @@ typedef struct __notification {
 typedef struct __notification_list {
     notification *notification;         // Notificação
     struct __notification_list *next;
-    struct __notification_list *prev;
 } notification_list;
 
 
