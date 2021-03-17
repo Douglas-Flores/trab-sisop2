@@ -6,14 +6,6 @@
 #define BACKLOG_MAX 10
 #define BUFFER_SIZE 256
 
-typedef struct __notification {
-    uint32_t id;            // Identificador da notificação (sugere-se um identificador único)
-    uint32_t timestamp;     // Timestamp da notificação
-    const char* _string;    // Mensagem
-    uint16_t length;        // Tamanho da mensagem
-    uint16_t pending;       // Quantidade de leitores pendentes
-} notification;
-
 typedef struct __packet {
     uint16_t type;          //Tipo do pacote (p.ex. DATA | CMD)
     uint16_t seqn;          //Número de sequência
