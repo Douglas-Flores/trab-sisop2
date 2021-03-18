@@ -13,8 +13,10 @@ int load_profiles(profile_list *profiles) {
     do {
         // Iniciando variáveis
         profile_list *followers = malloc(sizeof(profile_list));
+        followers->profile = NULL;
         followers->next = NULL;
         notification_list *notifications = malloc(sizeof(notification_list));
+        notifications->notification = NULL;
         notifications->next = NULL;
         profile *prof = malloc(sizeof(profile));
         prof->followers = followers;
@@ -130,15 +132,80 @@ int load_profiles(profile_list *profiles) {
     return -1;
 }
 
-int get_profile(char *profile_name, profile_list *list) {
+int get_profile(char *username, profile_list *list) {
 
     profile_list *node = list;
+    int n = 0;
     while (node != NULL)
     {
-        if (strcmp(node->profile->username, profile_name) == 0)
-            return 0;
+        if (strcmp(node->profile->username, username) == 0)
+            return n;
         node = node->next;
+        n++;
     }
 
     return -1;
+}
+
+int follow(profile_list *profiles, profile *logged, char *username, char *response) {
+    int n = 0;
+    bzero(response, 256);
+
+    n = get_profile(username, profiles);
+    if (n < 0) {
+        printf("Rejected: %s attempted to follow an user that does not exist.\n", logged->username);
+        strcpy(response, "Error! The user couldn't be found.");
+        return n;
+    }
+
+    if (strcmp(logged->username, username) == 0) {
+        printf("Rejected: %s attempted to follow itself.\n", username);
+        strcpy(response, "Error! You can't follow yourself.");
+        return -1;
+    }
+
+    profile_list *node = logged->followers;
+    int i = 0;
+    while (node != NULL)
+    {
+        if (strcmp(node->profile->username, username) == 0) {
+            printf("Rejected: %s is already following %s\n", logged->username, username);
+            strcpy(response, "Error! You are already following ");
+            strcat(response, username);
+            n = -1;
+        }
+        node = node->next;
+        i++;
+    }
+
+    // Testando se ouve algum match no while anterior. Isso é importante por i precisa ser o tamanho da lista de seguidores
+    if (n < 0) 
+        return n;
+    
+    // Se chegou até aqui, pode seguir
+
+    // Criando novo nodo
+    profile *newfollower = malloc(sizeof(profile));
+    strcpy(newfollower->username, username);
+    profile_list *newnode = malloc(sizeof(profile_list));
+    newnode->profile = newfollower;
+    newnode->next = NULL;
+    // ..
+
+    // Inserindo novo nodo na lista     Obs.: i = tamanho da lista de seguidores
+    profile_list *followers = logged->followers;
+    if (followers == NULL) {
+        free(newnode);
+        followers->profile = newfollower;
+    } else {
+        for(int ptr = 1; ptr < i; ptr++)
+            followers = followers->next;
+        followers->next = newnode;
+    }
+    // ..
+
+    strcpy(response, "Success! You are now following ");
+    strcat(response, username);
+
+    return n;
 }

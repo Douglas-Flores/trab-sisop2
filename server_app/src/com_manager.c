@@ -17,19 +17,26 @@ profile_list *profiles;
 
 void *client_thread(void *args) {
 	
-	int n, sockfd;
+	int n, sockfd, userid;
 	char buffer[BUFFER_SIZE];
+	profile *cur_user;
 	client_args *rargs = args;
 	setbuf(stdout, NULL);
 
 	sockfd = rargs->sockfd;
 	profiles = rargs->profiles;
 
-	if (authenticate(sockfd) < 0) {
+	userid = authenticate(sockfd);
+	if (userid < 0) {
 		printf("Falha de Autenticacao.\n");
 		close(sockfd);
 		return 0;
 	}
+
+	profile_list *node = profiles;
+	for (int i = 0; i < userid; i++)
+		node = node->next;
+	cur_user = node->profile;
 
 	while(strcmp(buffer,"exit\n") != 0){
 
@@ -45,7 +52,15 @@ void *client_thread(void *args) {
 			break;
 		}
 		else
-			printf("Here is the message: %s", buffer);
+			printf("%s: %s", cur_user->username, buffer);
+		// ..
+
+		// Interpretando comando
+		char *cmd = strtok(buffer," ");
+		char *data = strtok(NULL, "\n");
+		char response[256] = " ";
+		if(strcmp(cmd,"FOLLOW") == 0)
+			follow(profiles, cur_user, data, response);
 		// ..
 
 		// Criando pacote para enviar
@@ -53,17 +68,19 @@ void *client_thread(void *args) {
 		package.type = DATA;
 		package.seqn = 0;
 		package.timestamp = time(NULL);
-		package._payload = "Message received!";
-		package.length = 18;
+		package._payload = response;
+		package.length = strlen(response);
 		// ..
 
 		// Enviar mensagem
 		if (send_packet(sockfd, &package) < 0)
 			break;
 		// ..
+
+		bzero(response, 256);
 	}
 
-	printf("Closing connection...\n");
+	printf("%s disconnected...\n", cur_user->username);
 	close(sockfd);
 
 	return 0;
@@ -130,7 +147,6 @@ int authenticate(int socket){
 	n = read(socket, buffer, BUFFER_SIZE);
 	if (n < 0) 
 		printf("ERROR reading from socket");
-	printf("Username: %s\n", buffer);
 	// ..
 
 	// Verificando existência do usuário
@@ -142,10 +158,14 @@ int authenticate(int socket){
 	package.type = DATA;
 	package.seqn = 0;
 	package.timestamp = time(NULL);
-	if (n == 0)
+	if (n >= 0) {
 		package._payload = "success";
-	else
+		printf("%s logged\n", buffer);
+	}
+	else {
 		package._payload = "failure";
+		printf("%s attempted to log but was unsuccessful.\n", buffer);
+	}
 	package.length = strlen(package._payload) + 1;
 	// ..
 

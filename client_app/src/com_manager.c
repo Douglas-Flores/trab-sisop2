@@ -66,6 +66,7 @@ int read_packet(int socket, packet *package, char *buffer) {
     package->_payload = payload;
 
     // Montando payload
+    bzero(payload,128);
     for(int i = 0; i < package->length; i++) {
         payload[i] = buffer[sizeof(packet)+i];
     }

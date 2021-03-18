@@ -71,6 +71,7 @@ int main(int argc, char *argv[]) {
     printf("%s\n", received._payload);
     free(received._payload);
     bzero(&received, sizeof(packet));
+    bzero(buffer, BUFFER_SIZE);
     // ..
 
   }

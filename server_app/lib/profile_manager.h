@@ -18,7 +18,7 @@ typedef struct __profile_list {
 typedef struct __notification {
     uint32_t id;            // Identificador da notificação (sugere-se um identificador único)
     uint32_t timestamp;     // Timestamp da notificação
-    const char* _string;    // Mensagem
+    char* _string;          // Mensagem
     uint16_t length;        // Tamanho da mensagem
     uint16_t pending;       // Quantidade de leitores pendentes
 } notification;
@@ -30,4 +30,5 @@ typedef struct __notification_list {
 
 
 int load_profiles(profile_list *profiles);
-int get_profile(char *profile_name, profile_list *list);
+int get_profile(char *username, profile_list *list);
+int follow(profile_list *profiles, profile *logged, char *username, char *response);
