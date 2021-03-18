@@ -9,19 +9,25 @@
 #include <pthread.h>
 #include <errno.h>
 #include "../lib/com_manager.h"
-#include "../lib/profile_manager.h"
+#include "../lib/database.h"
 
 #define PORT 4000
 
-void *client_thread(void *sockfd) {
+profile_list *profiles;
+
+void *client_thread(void *args) {
 	
-	int n;
+	int n, sockfd;
 	char buffer[BUFFER_SIZE];
+	client_args *rargs = args;
 	setbuf(stdout, NULL);
 
-	if (authenticate(*(int *) sockfd) < 0) {
+	sockfd = rargs->sockfd;
+	profiles = rargs->profiles;
+
+	if (authenticate(sockfd) < 0) {
 		printf("Falha de Autenticacao.\n");
-		close(*(int *) sockfd);
+		close(sockfd);
 		return 0;
 	}
 
@@ -29,7 +35,7 @@ void *client_thread(void *sockfd) {
 
 		// Lendo do Socket
 		bzero(buffer, BUFFER_SIZE);
-		n = read(*(int *) sockfd, buffer, BUFFER_SIZE);
+		n = read(sockfd, buffer, BUFFER_SIZE);
 		if (n < 0) {
 			printf("ERROR reading from socket");
 			continue;
@@ -52,13 +58,13 @@ void *client_thread(void *sockfd) {
 		// ..
 
 		// Enviar mensagem
-		if (send_packet(*(int *) sockfd, &package) < 0)
+		if (send_packet(sockfd, &package) < 0)
 			break;
 		// ..
 	}
 
 	printf("Closing connection...\n");
-	close(*(int *) sockfd);
+	close(sockfd);
 
 	return 0;
 }
@@ -128,7 +134,7 @@ int authenticate(int socket){
 	// ..
 
 	// Verificando existência do usuário
-	n = get_profile(buffer);
+	n = get_profile(buffer, profiles);
 	// ..
 
 	// Criando pacote para enviar

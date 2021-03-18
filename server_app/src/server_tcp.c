@@ -12,7 +12,7 @@
 #include <time.h>
 #include <arpa/inet.h>
 #include "../lib/com_manager.h"
-#include "../lib/profile_manager.h"
+#include "../lib/database.h"
 
 #define PORT 4000
 
@@ -49,8 +49,9 @@ int main(int argc, char *argv[])
 
   // Carregando estruturas de dados
   profile_list profiles;
-  profiles.next = NULL;
   load_profiles(&profiles);
+  client_args *args = malloc(sizeof(args));
+  args->profiles = &profiles;
   // ..
 
   // Loop de leitura por novas requisições de conexão
@@ -68,7 +69,8 @@ int main(int argc, char *argv[])
 
       // Criando thread para o novo usuário conectado  
       pthread_t th;
-      pthread_create(&th, NULL, client_thread, &newsockfd);
+      args->sockfd = newsockfd;
+      pthread_create(&th, NULL, client_thread, args);
       // ..
     }
   }

@@ -30,4 +30,4 @@ typedef struct __notification_list {
 
 
 int load_profiles(profile_list *profiles);
-int get_profile(char *profile_name);
+int get_profile(char *profile_name, profile_list *list);

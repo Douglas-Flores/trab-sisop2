@@ -14,7 +14,7 @@ typedef struct __packet {
     const char* _payload;   //Dados da mensagem
 } packet;
 
-void *client_thread(void *sockfd);
+void *client_thread(void *args);
 int read_packet(int socket, packet *package, char *buffer);
 int send_packet(int socket, packet *package);
 int authenticate(int socket);
