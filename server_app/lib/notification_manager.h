@@ -5,4 +5,4 @@
 #include <time.h>
 #include "profile_manager.h"
 
-int new_notification(profile *author, char* msg, char *response);
+//int new_notification(profile *author, char* msg, char *response);
