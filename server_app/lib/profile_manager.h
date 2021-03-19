@@ -3,7 +3,7 @@
 #include <string.h>
 #include <stdint.h>
 #include <time.h>
-#include "notification.h"
+#include "notifications.h"
 
 #ifndef _PROFILEMANAGER_
 #define _PROFILEMANAGER_

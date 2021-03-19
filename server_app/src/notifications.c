@@ -1,4 +1,4 @@
-#include "../lib/notification.h"
+#include "../lib/notifications.h"
 
 int notid = 0;
 

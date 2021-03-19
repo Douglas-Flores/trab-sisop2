@@ -13,7 +13,6 @@
 #include <arpa/inet.h>
 #include "../lib/com_manager.h"
 #include "../lib/database.h"
-#include "../lib/notification_manager.h"
 
 #define PORT 4000
 
