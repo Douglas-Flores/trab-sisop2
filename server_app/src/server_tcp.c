@@ -13,6 +13,7 @@
 #include <arpa/inet.h>
 #include "../lib/com_manager.h"
 #include "../lib/database.h"
+#include "../lib/notifications.h"
 
 #define PORT 4000
 
@@ -130,9 +131,10 @@ void *client_thread(void *args) {
 		char response[256] = " ";
 		if(strcmp(cmd,"FOLLOW") == 0)
 			follow(profiles, cur_user, data, response);
-		if(strcmp(cmd,"SEND") == 0)
-      //printf("batata\n");
+		else if(strcmp(cmd,"SEND") == 0)
 			new_notification(cur_user, data, response);
+    else
+      strcpy(response, "Invalid command, try again...");
 		// ..
 
 		// Criando pacote para enviar
