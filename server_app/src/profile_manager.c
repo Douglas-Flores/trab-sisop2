@@ -3,6 +3,7 @@
 #include <string.h>
 #include <stdbool.h>
 #include "../lib/profile_manager.h"
+#include "../lib/com_manager.h"
 
 int load_profiles(profile_list *profiles) {
     FILE *db;
@@ -145,6 +146,42 @@ int get_profile(char *username, profile_list *list) {
     }
 
     return -1;
+}
+
+int authenticate(int socket, profile_list *profiles){
+	int n;
+	char buffer[BUFFER_SIZE];
+
+	// Lendo username
+	bzero(buffer, BUFFER_SIZE);
+	n = read_text(socket, buffer);
+	// ..
+
+	// Verificando existência do usuário
+	n = get_profile(buffer, profiles);
+	// ..
+
+	// Criando pacote para enviar
+	packet package;
+	package.type = DATA;
+	package.seqn = 0;
+	package.timestamp = time(NULL);
+	if (n >= 0) {
+		package._payload = "success";
+		printf("%s logged\n", buffer);
+	}
+	else {
+		package._payload = "failure";
+		printf("%s attempted to log but was unsuccessful.\n", buffer);
+	}
+	package.length = strlen(package._payload) + 1;
+	// ..
+
+	// Enviando resposta
+	send_packet(socket, &package);
+	// ..
+
+	return n;
 }
 
 int follow(profile_list *profiles, profile *logged, char *username, char *response) {

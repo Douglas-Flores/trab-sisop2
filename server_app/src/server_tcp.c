@@ -24,6 +24,8 @@
   do { perror(msg); exit(EXIT_FAILURE); } while (0)
 // -------------------------------------------------------------
 
+profile_list *profiles;
+
 int main(int argc, char *argv[])
 {
   int sockfd, option = 1;
@@ -48,10 +50,10 @@ int main(int argc, char *argv[])
   // ..
 
   // Carregando estruturas de dados
-  profile_list profiles;
-  load_profiles(&profiles);
+  profiles = malloc(sizeof(profile_list));
+  load_profiles(profiles);
   client_args *args = malloc(sizeof(args));
-  args->profiles = &profiles;
+  args->profiles = profiles;
   // ..
 
   // Loop de leitura por novas requisições de conexão
@@ -80,4 +82,77 @@ int main(int argc, char *argv[])
     printf("ERROR on closing the socket");
 
 	return 0; 
+}
+
+void *client_thread(void *args) {
+	
+	int n, sockfd, userid;
+	char buffer[BUFFER_SIZE];
+	profile *cur_user;
+	client_args *rargs = args;
+	setbuf(stdout, NULL);
+
+	sockfd = rargs->sockfd;
+	profiles = rargs->profiles;
+
+	userid = authenticate(sockfd, profiles);
+	if (userid < 0) {
+		printf("Falha de Autenticacao.\n");
+		close(sockfd);
+		return 0;
+	}
+
+	profile_list *node = profiles;
+	for (int i = 0; i < userid; i++)
+		node = node->next;
+	cur_user = node->profile;
+
+	while(strcmp(buffer,"exit\n") != 0){
+
+		// Lendo do Socket
+		bzero(buffer, BUFFER_SIZE);
+		n = read(sockfd, buffer, BUFFER_SIZE);
+		if (n < 0) {
+			printf("ERROR reading from socket");
+			continue;
+		}
+		else if (buffer[0] == '\0'){
+			printf("No response from user.\n");
+			break;
+		}
+		else
+			printf("%s: %s", cur_user->username, buffer);
+		// ..
+
+		// Interpretando comando
+		char *cmd = strtok(buffer," ");
+		char *data = strtok(NULL, "\n");
+		char response[256] = " ";
+		if(strcmp(cmd,"FOLLOW") == 0)
+			follow(profiles, cur_user, data, response);
+		if(strcmp(cmd,"SEND") == 0)
+			printf("%s\n",data);	// TODO
+		// ..
+
+		// Criando pacote para enviar
+		packet package;
+		package.type = DATA;
+		package.seqn = 0;
+		package.timestamp = time(NULL);
+		package._payload = response;
+		package.length = strlen(response);
+		// ..
+
+		// Enviar mensagem
+		if (send_packet(sockfd, &package) < 0)
+			break;
+		// ..
+
+		bzero(response, 256);
+	}
+
+	printf("%s disconnected...\n", cur_user->username);
+	close(sockfd);
+
+	return 0;
 }

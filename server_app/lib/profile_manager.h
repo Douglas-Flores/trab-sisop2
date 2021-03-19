@@ -3,6 +3,7 @@
 #include <string.h>
 #include <stdint.h>
 #include <time.h>
+#include "notification.h"
 
 typedef struct __profile {
     char username[20];                          // Nome de usuário
@@ -15,20 +16,7 @@ typedef struct __profile_list {
     struct __profile_list *next;    // Próximo da lista
 } profile_list;
 
-typedef struct __notification {
-    uint32_t id;            // Identificador da notificação (sugere-se um identificador único)
-    uint32_t timestamp;     // Timestamp da notificação
-    char* _string;          // Mensagem
-    uint16_t length;        // Tamanho da mensagem
-    uint16_t pending;       // Quantidade de leitores pendentes
-} notification;
-
-typedef struct __notification_list {
-    notification *notification;         // Notificação
-    struct __notification_list *next;
-} notification_list;
-
-
 int load_profiles(profile_list *profiles);
 int get_profile(char *username, profile_list *list);
+int authenticate(int socket, profile_list *profiles);
 int follow(profile_list *profiles, profile *logged, char *username, char *response);
