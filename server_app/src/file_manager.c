@@ -25,7 +25,8 @@ int write_to_file_one(struct profile_list *data, char const *fileName)
 }
 
 char *followers_to_string(profile_list * followers) {
-    if(followers->profile == NULL) {
+
+    if(followers == NULL) {
         return "[]";
     }
     int numberOfFollowers = 1;
@@ -36,6 +37,7 @@ char *followers_to_string(profile_list * followers) {
         numberOfFollowers++;
         followersIterator =  followersIterator->next;
     }
+
 
 
 
@@ -86,7 +88,7 @@ char *notification_to_string(notification * notification) {
 }
 
 char *notification_list_to_string(notification_list * notificationList) {
-    if(notificationList->notification == NULL) {
+    if(notificationList == NULL) {
         return "[]";
     }
     int numberOfNotifications = 1;
@@ -128,14 +130,15 @@ char *notification_list_to_string(notification_list * notificationList) {
         free(listStringNotifications[i]);
     }
     free(listStringNotifications);
-    printf("\n%d\n", strlen(finalString));
 
 
     return finalString;
 }
 
+
 char* profile_to_string(profile currentProfile){
     char* followersString = followers_to_string(currentProfile.followers);
+    printf("\n%s\n", followersString);
     char* notificationString = notification_list_to_string(currentProfile.notifications);
     printf("\n%s\n", notificationString);
     char* profileString = calloc(strlen(followersString)+ strlen(notificationString)+ strlen(currentProfile.username)+3,
@@ -147,24 +150,61 @@ char* profile_to_string(profile currentProfile){
     strcat(profileString, ",");
 
     strcat(profileString, notificationString);
-    free(followersString);
-    free(notificationString);
     return profileString;
 }
 
+void profile_list_to_string(profile_list * profileList) {
+    if(profileList == NULL) {
+        return;
+    }
+    int numberOfProfiles = 1;
+    profile_list *profileIterator = profileList;
+
+    while(profileIterator->next != NULL) {
+
+        numberOfProfiles++;
+        profileIterator =  profileIterator->next;
+    }
+
+
+
+    profileIterator = profileList;
+    char* profileString = profile_to_string(*profileIterator->profile);
+    printf("\n%s\n", profileString);
+
+//
+//    while(profileIterator->next != NULL) {
+//        printf("\nAQUI\n");
+//        profileIterator =  profileIterator->next;
+//
+//        char* profileString = profile_to_string(*profileIterator->profile);
+//        printf("\n%s\n", profileString);
+//        free(profileString);
+//    }
+}
+
+
 int main() {
+/*
     profile_list* profileList = calloc(1, sizeof(profile_list));
 
 
-    profileList->profile = calloc(1, sizeof(profile_list));
+    profileList->profile = calloc(1, sizeof(profile));
 
     profileList->profile->username[0] = 'c';
     profileList->profile->username[1] = '\0';
+    profileList->profile->followers = NULL;
+
+    profileList->profile->notifications = NULL;
     profileList->next = calloc(1, sizeof(profile_list));
     profileList->next->profile = calloc(1, sizeof(profile_list));
     profileList->next->profile->username[0] = '8';
     profileList->next->profile->username[1] = '\0';
+    profileList->next->profile->followers = profileList;
+    profileList->next->profile->notifications = NULL;
     profileList->next->next = NULL;
+
+
 
 //    char* followersString = followers_to_string(profileList);
 //    printf("%s", followersString);
@@ -182,6 +222,7 @@ int main() {
     notificationList->next = calloc(1, sizeof(notification_list));
     notificationList->next->notification = not;
     notificationList->next->next=NULL;
+
 //    char* notString = notification_list_to_string(notificationList);
 //    printf("\n%s\n", notString);
     profile *myProfile = calloc(1, sizeof(profile));
@@ -190,7 +231,15 @@ int main() {
     myProfile->username[0] = 'E';
     myProfile->username[1] = 'U';
     myProfile->username[2] = '\0';
+    profileList->next=NULL;
+    */
 
-    char* profileString = profile_to_string(*myProfile);
-    printf("\n%s\n", profileString);
+    profile_list* testList = calloc(1, sizeof(profile_list));
+    testList->profile = calloc(1, sizeof(profile));
+    testList->profile->followers=NULL;
+    testList->profile->notifications=NULL;
+    testList->profile->username[0]='T';
+    testList->profile->username[1]='\0';
+    testList->next=NULL;
+    profile_list_to_string(testList);
 }
