@@ -30,7 +30,7 @@ char *followers_to_string(profile_list * followers) {
     }
     int numberOfFollowers = 1;
     profile_list * followersIterator = followers;
-    printf("\naqui\n");
+
     while(followersIterator->next != NULL) {
 
         numberOfFollowers++;
@@ -46,8 +46,11 @@ char *followers_to_string(profile_list * followers) {
     strcat(followersString, followersIterator->profile->username);
 
     while(followersIterator->next != NULL) {
+
         followersIterator =  followersIterator->next;
+
         strcat(followersString, ",");
+
         strcat(followersString, followersIterator->profile->username);
 
     }
@@ -66,7 +69,7 @@ char *notification_to_string(notification * notification) {
     sprintf(lengthString,"%"PRIu16, notification->length);
     sprintf(pendingString,"%"PRIu16, notification->pending);
 
-    char* notificationString = calloc(66+ sizeof(notification->_string), sizeof(char));
+    char* notificationString = calloc(66+ strlen(notification->_string), sizeof(char));
     notificationString[0] = '[';
     strcat(notificationString, idString);
     strcat(notificationString, ",");
@@ -88,7 +91,7 @@ char *notification_list_to_string(notification_list * notificationList) {
     }
     int numberOfNotifications = 1;
     notification_list * notificationIterator = notificationList;
-    printf("\naqui\n");
+
     while(notificationIterator->next != NULL) {
 
         numberOfNotifications++;
@@ -111,7 +114,7 @@ char *notification_list_to_string(notification_list * notificationList) {
     int sizeOfString = 0;
     int i;
     for(i=0;i<numberOfNotifications;i++){
-        sizeOfString += sizeof(listStringNotifications[i]);
+        sizeOfString += strlen(listStringNotifications[i]);
     }
     char* finalString = calloc(sizeOfString+numberOfNotifications+2, sizeof(char));
 
@@ -125,10 +128,28 @@ char *notification_list_to_string(notification_list * notificationList) {
         free(listStringNotifications[i]);
     }
     free(listStringNotifications);
-
+    printf("\n%d\n", strlen(finalString));
 
 
     return finalString;
+}
+
+char* profile_to_string(profile currentProfile){
+    char* followersString = followers_to_string(currentProfile.followers);
+    char* notificationString = notification_list_to_string(currentProfile.notifications);
+    printf("\n%s\n", notificationString);
+    char* profileString = calloc(strlen(followersString)+ strlen(notificationString)+ strlen(currentProfile.username)+3,
+                                 sizeof(char));
+
+    strcat(profileString, currentProfile.username);
+    strcat(profileString, ",");
+    strcat(profileString, followersString);
+    strcat(profileString, ",");
+
+    strcat(profileString, notificationString);
+    free(followersString);
+    free(notificationString);
+    return profileString;
 }
 
 int main() {
@@ -141,14 +162,13 @@ int main() {
     profileList->profile->username[1] = '\0';
     profileList->next = calloc(1, sizeof(profile_list));
     profileList->next->profile = calloc(1, sizeof(profile_list));
-    profileList->next->profile->username[0] = 'A';
-
+    profileList->next->profile->username[0] = '8';
     profileList->next->profile->username[1] = '\0';
     profileList->next->next = NULL;
 
-    char* followersString = followers_to_string(profileList);
-    printf("%s", followersString);
-    printf("\naqui\n");
+//    char* followersString = followers_to_string(profileList);
+//    printf("%s", followersString);
+
 
     notification* not = calloc(1, sizeof(notification));
     not->id = 1;
@@ -162,7 +182,15 @@ int main() {
     notificationList->next = calloc(1, sizeof(notification_list));
     notificationList->next->notification = not;
     notificationList->next->next=NULL;
-    char* notString = notification_list_to_string(notificationList);
-    printf("\n%s\n", notString);
+//    char* notString = notification_list_to_string(notificationList);
+//    printf("\n%s\n", notString);
+    profile *myProfile = calloc(1, sizeof(profile));
+    myProfile->notifications =notificationList;
+    myProfile->followers=profileList;
+    myProfile->username[0] = 'E';
+    myProfile->username[1] = 'U';
+    myProfile->username[2] = '\0';
 
+    char* profileString = profile_to_string(*myProfile);
+    printf("\n%s\n", profileString);
 }
