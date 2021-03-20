@@ -7,9 +7,11 @@
 
 #ifndef _PROFILEMANAGER_
 #define _PROFILEMANAGER_
+#define MAX_SESSIONS 2
 
 typedef struct __profile {
     char username[20];                          // Nome de usuário
+    int open_sessions;
     struct __profile_list *followers;           // Lista de seus seguidores
     struct __notification_list *notifications;  // Lista de seus 'tweets'
 } profile;
@@ -20,9 +22,11 @@ typedef struct __profile_list {
 } profile_list;
 
 int load_profiles(profile_list *profiles);
-int get_profile(char *username, profile_list *list);
+int validate_profile(char *username, profile_list *list);
 int authenticate(int socket, profile_list *profiles);
 int follow(profile_list *profiles, profile *logged, char *username, char *response);
-
+int count_followers(profile *user);
+profile* get_profile_byname(profile_list *list, char *username);
+profile* get_profile_byid(profile_list *list, int id);
 
 #endif

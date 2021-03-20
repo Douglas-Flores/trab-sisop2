@@ -14,12 +14,12 @@ int new_notification(profile *author, char* msg, char *response) {
     newnot->timestamp = time(NULL);              // TODO
     newnot->_string = _string;
     newnot->length = strlen(msg);
-    newnot->pending = 10;                       // TODO
+    newnot->pending = count_followers(author);
     // ..
     
     if(list->notification == NULL) {
         list->notification = newnot;
-        strcpy(response, "Message sent successfully!");
+        strcpy(response, "Message stored successfully!");
     }
     else {
         // Criando novo nodo
@@ -37,7 +37,7 @@ int new_notification(profile *author, char* msg, char *response) {
         // Adicionando novo nodo
         list->next = newnode;
 
-        strcpy(response, "Message sent successfully!");
+        strcpy(response, "Message stored successfully!");
     }
 
     // Increamentando id

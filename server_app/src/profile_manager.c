@@ -20,6 +20,7 @@ int load_profiles(profile_list *profiles) {
         notifications->notification = NULL;
         notifications->next = NULL;
         profile *prof = malloc(sizeof(profile));
+        prof->open_sessions = 0;
         prof->followers = followers;
         prof->notifications = notifications;
         // ..
@@ -133,7 +134,7 @@ int load_profiles(profile_list *profiles) {
     return -1;
 }
 
-int get_profile(char *username, profile_list *list) {
+int validate_profile(char *username, profile_list *list) {
 
     profile_list *node = list;
     int n = 0;
@@ -158,20 +159,30 @@ int authenticate(int socket, profile_list *profiles){
 	// ..
 
 	// Verificando existência do usuário
-	n = get_profile(buffer, profiles);
+	n = validate_profile(buffer, profiles);
 	// ..
+
+    // Obtendo perfil de usuário
+    profile *user;
+    if (n >= 0)
+        user = get_profile_byid(profiles, n);
+    else
+        user = NULL;
+    // ..
 
 	// Criando pacote para enviar
 	packet package;
 	package.type = DATA;
 	package.seqn = 0;
 	package.timestamp = time(NULL);
-	if (n >= 0) {
+	if (n >= 0 && user->open_sessions < MAX_SESSIONS) {
+        user->open_sessions = user->open_sessions + 1;
 		package._payload = "success";
 		printf("%s logged\n", buffer);
 	}
 	else {
 		package._payload = "failure";
+        n = -1;
 		printf("%s attempted to log but was unsuccessful.\n", buffer);
 	}
 	package.length = strlen(package._payload) + 1;
@@ -188,7 +199,7 @@ int follow(profile_list *profiles, profile *logged, char *username, char *respon
     int n = 0;
     bzero(response, 256);
 
-    n = get_profile(username, profiles);
+    n = validate_profile(username, profiles);
     if (n < 0) {
         printf("Rejected: %s attempted to follow an user that does not exist.\n", logged->username);
         strcpy(response, "Error! The user couldn't be found.");
@@ -245,4 +256,48 @@ int follow(profile_list *profiles, profile *logged, char *username, char *respon
     strcat(response, username);
 
     return n;
+}
+
+int count_followers(profile *user) {
+    int n = 0;
+    profile_list *followers = user->followers;
+
+    while (followers->profile != NULL) {
+        n++;
+        if (followers->next == NULL)
+            break;
+        else
+            followers = followers->next;
+    }
+    
+    return n;
+}
+
+profile* get_profile_byname(profile_list *list, char *username) {
+    
+    profile_list *node = list;
+    while (node != NULL)
+    {
+        if (strcmp(node->profile->username, username) == 0)
+            return node->profile;
+        node = node->next;
+    }
+
+    return NULL;
+}
+
+profile* get_profile_byid(profile_list *list, int id) {
+    
+    profile_list *node = list;
+
+    for (int i = 0; i < id; i++) {
+        if (node->next != NULL)
+            node = node->next;
+        else {
+            node = NULL;
+            break;
+        }
+    }
+
+    return node->profile;
 }

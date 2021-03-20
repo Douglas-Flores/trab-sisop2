@@ -114,10 +114,10 @@ void *client_thread(void *args) {
 		bzero(buffer, BUFFER_SIZE);
 		n = read(sockfd, buffer, BUFFER_SIZE);
 		if (n < 0) {
-			printf("ERROR reading from socket");
+			printf("ERROR reading from socket\n");
 			continue;
 		}
-		else if (buffer[0] == '\0'){
+		else if (buffer[0] == '\0' || buffer[0] == '\n'){
 			printf("No response from user.\n");
 			break;
 		}
@@ -133,8 +133,8 @@ void *client_thread(void *args) {
 			follow(profiles, cur_user, data, response);
 		else if(strcmp(cmd,"SEND") == 0)
 			new_notification(cur_user, data, response);
-    else
-      strcpy(response, "Invalid command, try again...");
+		else
+			strcpy(response, "Invalid command, try again...");
 		// ..
 
 		// Criando pacote para enviar
@@ -155,6 +155,7 @@ void *client_thread(void *args) {
 	}
 
 	printf("%s disconnected...\n", cur_user->username);
+	cur_user->open_sessions--;
 	close(sockfd);
 
 	return 0;
