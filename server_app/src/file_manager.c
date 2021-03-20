@@ -139,9 +139,7 @@ char *notification_list_to_string(notification_list * notificationList) {
 
 char* profile_to_string(profile currentProfile){
     char* followersString = followers_to_string(currentProfile.followers);
-    printf("\n%s\n", followersString);
     char* notificationString = notification_list_to_string(currentProfile.notifications);
-    printf("\n%s\n", notificationString);
     char* profileString = calloc(strlen(followersString)+ strlen(notificationString)+ strlen(currentProfile.username)+3,
                                  sizeof(char));
 
@@ -154,7 +152,7 @@ char* profile_to_string(profile currentProfile){
     return profileString;
 }
 
-void profile_list_to_string(profile_list * profileList) {
+void save_profile_list(profile_list * profileList) {
     if(profileList == NULL) {
         return;
     }
@@ -168,10 +166,12 @@ void profile_list_to_string(profile_list * profileList) {
     }
 
 
+    FILE* file  = fopen("../data/profiles2.db", "w+");
+
 
     profileIterator = profileList;
     char* profileString = profile_to_string(*profileIterator->profile);
-    printf("\n%s\n", profileString);
+    fprintf(file, profileString);
     free(profileString);
 
     while(profileIterator->next != NULL) {
@@ -179,69 +179,9 @@ void profile_list_to_string(profile_list * profileList) {
         profileIterator =  profileIterator->next;
 
         char* profileString = profile_to_string(*profileIterator->profile);
-        printf("\n%s\n", profileString);
+        fprintf(file, profileString);
         free(profileString);
     }
+    fclose(file);
 }
 
-
-int main() {
-
-    profile_list* profileList = calloc(1, sizeof(profile_list));
-
-
-    profileList->profile = calloc(1, sizeof(profile));
-
-    profileList->profile->username[0] = 'c';
-    profileList->profile->username[1] = '\0';
-    profileList->profile->followers = NULL;
-
-    profileList->profile->notifications = NULL;
-    profileList->next = calloc(1, sizeof(profile_list));
-    profileList->next->profile = calloc(1, sizeof(profile_list));
-    profileList->next->profile->username[0] = '8';
-    profileList->next->profile->username[1] = '\0';
-    profileList->next->profile->followers = profileList;
-    profileList->next->profile->notifications = NULL;
-    profileList->next->next = NULL;
-
-
-
-    //char* followersString = followers_to_string(profileList);
-    //printf("%s", followersString);
-
-
-    notification* not = calloc(1, sizeof(notification));
-    not->id = 1;
-    not->timestamp = 2;
-    not->_string = calloc(sizeof("3"), sizeof(char));
-    not->_string = "3";
-    not->length = 4;
-    not->pending = 5;
-    notification_list* notificationList = calloc(1, sizeof(notification_list));
-    notificationList->notification = not;
-    notificationList->next = calloc(1, sizeof(notification_list));
-    notificationList->next->notification = not;
-    notificationList->next->next=NULL;
-
-//    char* notString = notification_list_to_string(notificationList);
-//    printf("\n%s\n", notString);
-    profile *myProfile = calloc(1, sizeof(profile));
-    myProfile->notifications =notificationList;
-    myProfile->followers=profileList;
-    myProfile->username[0] = 'E';
-    myProfile->username[1] = 'U';
-    myProfile->username[2] = '\0';
-
-
-    profile_list* testList = calloc(1, sizeof(profile_list));
-    testList->profile = calloc(1, sizeof(profile));
-    testList->profile->followers=profileList;
-    testList->profile->notifications=notificationList;
-    testList->profile->username[0]='T';
-    testList->profile->username[1]='\0';
-    testList->next = calloc(1, sizeof(profile_list));
-    testList->next->next=NULL;
-    testList->next->profile = myProfile;
-    profile_list_to_string(testList);
-}
