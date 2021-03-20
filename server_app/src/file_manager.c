@@ -57,6 +57,7 @@ char *followers_to_string(profile_list * followers) {
 
     }
     strcat(followersString, "]");
+
     return followersString;
 }
 
@@ -171,21 +172,21 @@ void profile_list_to_string(profile_list * profileList) {
     profileIterator = profileList;
     char* profileString = profile_to_string(*profileIterator->profile);
     printf("\n%s\n", profileString);
+    free(profileString);
 
-//
-//    while(profileIterator->next != NULL) {
-//        printf("\nAQUI\n");
-//        profileIterator =  profileIterator->next;
-//
-//        char* profileString = profile_to_string(*profileIterator->profile);
-//        printf("\n%s\n", profileString);
-//        free(profileString);
-//    }
+    while(profileIterator->next != NULL) {
+
+        profileIterator =  profileIterator->next;
+
+        char* profileString = profile_to_string(*profileIterator->profile);
+        printf("\n%s\n", profileString);
+        free(profileString);
+    }
 }
 
 
 int main() {
-/*
+
     profile_list* profileList = calloc(1, sizeof(profile_list));
 
 
@@ -206,8 +207,8 @@ int main() {
 
 
 
-//    char* followersString = followers_to_string(profileList);
-//    printf("%s", followersString);
+    //char* followersString = followers_to_string(profileList);
+    //printf("%s", followersString);
 
 
     notification* not = calloc(1, sizeof(notification));
@@ -231,15 +232,16 @@ int main() {
     myProfile->username[0] = 'E';
     myProfile->username[1] = 'U';
     myProfile->username[2] = '\0';
-    profileList->next=NULL;
-    */
+
 
     profile_list* testList = calloc(1, sizeof(profile_list));
     testList->profile = calloc(1, sizeof(profile));
-    testList->profile->followers=NULL;
-    testList->profile->notifications=NULL;
+    testList->profile->followers=profileList;
+    testList->profile->notifications=notificationList;
     testList->profile->username[0]='T';
     testList->profile->username[1]='\0';
-    testList->next=NULL;
+    testList->next = calloc(1, sizeof(profile_list));
+    testList->next->next=NULL;
+    testList->next->profile = myProfile;
     profile_list_to_string(testList);
 }
