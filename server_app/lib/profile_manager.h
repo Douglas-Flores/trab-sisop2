@@ -23,11 +23,11 @@ typedef struct __profile_list {
 } profile_list;
 
 int load_profiles(profile_list *profiles);
+profile* get_profile_byname(profile_list *list, char *username);
+profile* get_profile_byid(profile_list *list, int id);
 int validate_profile(char *username, profile_list *list);
 int authenticate(int socket, profile_list *profiles);
 int follow(profile_list *profiles, profile *logged, char *username, char *response);
 int count_followers(profile *user);
-profile* get_profile_byname(profile_list *list, char *username);
-profile* get_profile_byid(profile_list *list, int id);
 
 #endif

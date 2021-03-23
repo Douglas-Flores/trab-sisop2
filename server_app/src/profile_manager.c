@@ -216,17 +216,21 @@ int follow(profile_list *profiles, profile *logged, char *username, char *respon
         return -1;
     }
 
-    profile_list *node = logged->followers;
+    profile *to_follow = get_profile_byname(profiles, username);
+    profile_list *fnode = to_follow->followers;
+    n = 0;
     int i = 0;
-    while (node != NULL)
-    {
-        if (strcmp(node->profile->username, username) == 0) {
+    while (fnode != NULL) {
+        if(fnode->profile == NULL) { n = -1; break;}
+            
+        if (strcmp(fnode->profile->username, logged->username) == 0) {
             printf("Rejected: %s is already following %s\n", logged->username, username);
             strcpy(response, "Error! You are already following ");
             strcat(response, username);
             n = -1;
         }
-        node = node->next;
+
+        fnode = fnode->next;
         i++;
     }
 
@@ -238,14 +242,14 @@ int follow(profile_list *profiles, profile *logged, char *username, char *respon
 
     // Criando novo nodo
     profile *newfollower = malloc(sizeof(profile));
-    strcpy(newfollower->username, username);
+    strcpy(newfollower->username, logged->username);
     profile_list *newnode = malloc(sizeof(profile_list));
     newnode->profile = newfollower;
     newnode->next = NULL;
     // ..
 
     // Inserindo novo nodo na lista     Obs.: i = tamanho da lista de seguidores
-    profile_list *followers = logged->followers;
+    profile_list *followers = to_follow->followers;
     if (followers == NULL) {
         free(newnode);
         followers->profile = newfollower;

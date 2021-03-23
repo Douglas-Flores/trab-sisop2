@@ -87,6 +87,7 @@ int postinbox(profile *receiver, notification *not) {
         notification_list *newnode;
         newnode = malloc(sizeof(notification_list));
         newnode->notification = not;
+        newnode->next = NULL;
         
         while (list->next != NULL)
             list = list->next;
