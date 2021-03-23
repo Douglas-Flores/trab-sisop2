@@ -27,57 +27,57 @@
 
 profile_list *profiles;
 
-int main(int argc, char *argv[])
-{
-  int sockfd, option = 1;
+int main(int argc, char *argv[]) {
+	int sockfd, option = 1;
 	struct sockaddr_in serv_addr;
 	
-  // Abrindo socket
+	// Abrindo socket
 	if ((sockfd = socket(AF_INET, SOCK_STREAM, 0)) == -1)
-    printf("ERROR opening socket\n");
-  setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &option, sizeof(option));  // necessário para reutilizar o socket assim que ele for fechado 
-	// ..
+		printf("ERROR opening socket\n");
+	setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &option, sizeof(option));  // necessário para reutilizar o socket assim que ele for fechado 
+		// ..
 
-  // Definindo endereço do servidor
+	// Definindo endereço do servidor
 	serv_addr.sin_family = AF_INET;
 	serv_addr.sin_port = htons(PORT);
-  serv_addr.sin_addr.s_addr = inet_addr("127.0.0.1");
+	serv_addr.sin_addr.s_addr = inet_addr("127.0.0.1");
 	bzero(&(serv_addr.sin_zero), 8);
-  // ..   
-    
-  // Binding
+	// ..   
+		
+	// Binding
 	if (bind(sockfd, (struct sockaddr *) &serv_addr, sizeof(serv_addr)) < 0) 
 		printf("ERROR on binding\n");
-  // ..
+	// ..
 
-  // Carregando estruturas de dados
-  profiles = malloc(sizeof(profile_list));
-  load_profiles(profiles);
-  client_args *args = malloc(sizeof(args));
-  args->profiles = profiles;
-  // ..
+	// Carregando estruturas de dados
+	profiles = malloc(sizeof(profile_list));
+	load_profiles(profiles);
+	client_args *args = malloc(sizeof(args));
+	args->profiles = profiles;
+	// ..
 
-  // Loop de leitura por novas requisições de conexão
-  while (2>1) {  // TODO: condição de saida
-    if (listen(sockfd, BACKLOG_MAX) == 0) {
-      int newsockfd;
-      socklen_t clilen;
-      struct sockaddr_in cli_addr;
+	// Loop de leitura por novas requisições de conexão
+	while (2>1) {  // TODO: condição de saida
+		if (listen(sockfd, BACKLOG_MAX) == 0) {
+			int clisockfd;
+			socklen_t clilen;
+			struct sockaddr_in cli_addr;
 
-      // Abrindo um novo socket
-      clilen = sizeof(struct sockaddr_in);
-      if ((newsockfd = accept(sockfd, (struct sockaddr *) &cli_addr, &clilen)) == -1)
-        printf("ERROR on accept\n");
-      // ..
-
-      // Criando thread para o novo usuário conectado  
-      pthread_t th;
-      args->sockfd = newsockfd;
-      pthread_create(&th, NULL, client_thread, args);
-      // ..
-    }
-  }
-  // ..
+			// Abrindo um novo socket para comandos
+			clilen = sizeof(struct sockaddr_in);
+			if ((clisockfd = accept(sockfd, (struct sockaddr *) &cli_addr, &clilen)) == -1)
+				printf("ERROR on accept\n");
+			// ..
+			else {
+				// Criando thread para o novo usuário conectado  
+				pthread_t th;
+				args->sockfd = clisockfd;
+				pthread_create(&th, NULL, client_thread, args);
+				// ..
+			}
+		}
+	}
+	// ..
 
 	if (close(sockfd) < 0)
     printf("ERROR on closing the socket");
@@ -132,7 +132,7 @@ void *client_thread(void *args) {
 		if(strcmp(cmd,"FOLLOW") == 0)
 			follow(profiles, cur_user, data, response);
 		else if(strcmp(cmd,"SEND") == 0)
-			new_notification(cur_user, data, response);
+			new_notification(profiles, cur_user, data, response);
 		else
 			strcpy(response, "Invalid command, try again...");
 		// ..

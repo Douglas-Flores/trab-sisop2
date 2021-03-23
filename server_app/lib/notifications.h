@@ -15,6 +15,7 @@
 //  STRUCTS
 typedef struct __notification {
     uint32_t id;            // Identificador da notificação (sugere-se um identificador único)
+    char author[20];        // Nome do autor
     uint32_t timestamp;     // Timestamp da notificação
     char* _string;          // Mensagem
     uint16_t length;        // Tamanho da mensagem
@@ -30,7 +31,9 @@ typedef struct __notification_list {
 #ifndef _PROFILEMANAGER_
 #include "profile_manager.h"
 
-int new_notification(profile *author, char* msg, char *response);
+int printinbox(profile *target);
+int postinbox(profile *receiver, notification *not);
+int new_notification(profile_list* profiles, profile *author, char* msg, char *response);
 
 #endif
 

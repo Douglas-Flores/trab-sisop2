@@ -19,10 +19,14 @@ int load_profiles(profile_list *profiles) {
         notification_list *notifications = malloc(sizeof(notification_list));
         notifications->notification = NULL;
         notifications->next = NULL;
+        notification_list *inbox = malloc(sizeof(notification_list));
+        inbox->notification = NULL;
+        inbox->next = NULL;
         profile *prof = malloc(sizeof(profile));
         prof->open_sessions = 0;
         prof->followers = followers;
         prof->notifications = notifications;
+        prof->inbox = inbox;
         // ..
 
         // Lendo username

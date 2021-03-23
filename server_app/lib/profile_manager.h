@@ -11,9 +11,10 @@
 
 typedef struct __profile {
     char username[20];                          // Nome de usuário
-    int open_sessions;
+    int open_sessions;                          // Número de sessões abertas
     struct __profile_list *followers;           // Lista de seus seguidores
     struct __notification_list *notifications;  // Lista de seus 'tweets'
+    struct __notification_list *inbox;          // Lista de notificações pendentes
 } profile;
 
 typedef struct __profile_list {
