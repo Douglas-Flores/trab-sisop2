@@ -13,6 +13,12 @@ typedef struct __packet {
     const char* _payload;   //Dados da mensagem
 } packet;
 
+typedef struct __client_thread_args {
+    int sockfd;                 // Socket de comunicação
+} client_thread_args;
+
+void *send_thread(void *args);
+void *receive_thread(void *args);
 int connect_to_server(char *end, char *port);
 int read_packet(int socket, packet *package, char *buffer);
 int send_packet(int socket, packet *package);
