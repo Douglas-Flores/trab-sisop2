@@ -14,7 +14,6 @@
 int main(int argc, char *argv[]) {
   
   int sockfd, n;
-  char buffer[BUFFER_SIZE];
 
   // Validando dados de entrada
   if (argc < 4) {
@@ -38,6 +37,26 @@ int main(int argc, char *argv[]) {
     return 0;
   }
   // ..
+
+  pthread_t cmd_thread, notif_thread;
+  pthread_create(&cmd_thread, NULL, send_thread, sockfd);
+  // pthread_create(&notif_thread, NULL, receive_thread, NULL);
+
+  pthread_join(cmd_thread);
+  // pthread_join(notif_thread);
+
+  // Fechando o socket
+	close(sockfd);
+  printf("Connection closed.\n");
+  // ..
+  
+  return 0;
+}
+
+// Thread do cliente para enviar comandos ao servidor
+void *send_thread(int sockfd) {
+  
+  char buffer[BUFFER_SIZE];
 
   // Loop de interação
   while (strcmp(buffer, "exit\n") != 0) {
@@ -76,10 +95,9 @@ int main(int argc, char *argv[]) {
 
   }
 
-  // Fechando o socket
-	close(sockfd);
-  printf("Connection closed.\n");
-  // ..
-  
-  return 0;
+}
+
+// Thread do cliente para receber notificacoes e imprimir na tela
+void *receive_thread(void *args) {
+  // TODO
 }

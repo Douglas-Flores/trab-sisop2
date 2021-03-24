@@ -13,6 +13,7 @@ typedef struct __packet {
     const char* _payload;   //Dados da mensagem
 } packet;
 
+void *send_thread(int sockfd);
 int connect_to_server(char *end, char *port);
 int read_packet(int socket, packet *package, char *buffer);
 int send_packet(int socket, packet *package);
