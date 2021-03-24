@@ -17,7 +17,9 @@ typedef struct __packet {
     char* _payload;   //Dados da mensagem
 } packet;
 
+void *notification_thread(void *args);
 void *client_thread(void *args);
+void *init_client(void *args);
 int read_packet(int socket, packet *package, char *buffer);
 int read_text(int socket, char *buffer);
 int send_packet(int socket, packet *package);

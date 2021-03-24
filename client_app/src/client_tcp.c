@@ -19,7 +19,7 @@ int main(int argc, char *argv[]) {
   // Validando dados de entrada
   if (argc < 4) {
 		fprintf(stderr,"usage %s hostname\n", argv[0]);
-		exit(0);
+		return 0;
   }
   // ..
 	
@@ -27,7 +27,16 @@ int main(int argc, char *argv[]) {
   sockfd = connect_to_server(argv[2], argv[3]);
   if (sockfd < 0) {
     printf("ERROR stablishing connection, ending proccess ...\n");
-    exit(0);
+    return 0;
+  }
+  // ..
+
+  // Estabelecendo canal de notificações
+  int notifsockfd;
+  notifsockfd = connect_to_server(argv[2], argv[3]);
+  if (sockfd < 0) {
+    printf("ERROR stablishing connection, ending proccess ...\n");
+    return 0;
   }
   // ..
 
@@ -40,13 +49,15 @@ int main(int argc, char *argv[]) {
   // ..
 
   // Cria estrutura apenas com o sockfd (lista de seguidores eh ignorada)
-  client_thread_args *args = malloc(sizeof(args));
-  args->sockfd = sockfd;
+  client_thread_args *args_cmd = malloc(sizeof(client_thread_args));
+  args_cmd->sockfd = sockfd;
+  client_thread_args *args_not = malloc(sizeof(client_thread_args));
+  args_not->sockfd = notifsockfd;
 
   // Executa threads de envio de comandos e recepcao de notificacoes ate que terminem
   pthread_t cmd_thread, notif_thread;
-  pthread_create(&cmd_thread, NULL, send_thread, args);
-  pthread_create(&notif_thread, NULL, receive_thread, args);
+  pthread_create(&cmd_thread, NULL, cmd_routine, args_cmd);
+  pthread_create(&notif_thread, NULL, notif_routine, args_not);
   pthread_join(cmd_thread, NULL);
   pthread_join(notif_thread, NULL);
 
@@ -59,7 +70,7 @@ int main(int argc, char *argv[]) {
 }
 
 // Thread do cliente para enviar comandos ao servidor
-void *send_thread(void *args) {
+void *cmd_routine(void *args) {
   
   char buffer[BUFFER_SIZE];
 	client_thread_args *rargs = args;
@@ -89,30 +100,38 @@ void *send_thread(void *args) {
       send_packet(sockfd, &package);
     }
 
-  }
-
-  return NULL;
-}
-
-// Thread do cliente para receber notificacoes e imprimir na tela
-void *receive_thread(void *args) {
-  
-  char buffer[BUFFER_SIZE];
-	client_thread_args *rargs = args;
-	int sockfd = rargs->sockfd;
-
-	while(strcmp(buffer,"Invalid command, try again...") != 0){
-
     bzero(buffer, BUFFER_SIZE); // limpando o buffer para leitura
 
     // Lendo do socket
     packet received;
     read_packet(sockfd, &received, buffer);
     printf("%s\n", received._payload);
-    // free(received._payload);
     bzero(&received, sizeof(packet));
     // ..
 
+  }
+
+  return NULL;
+}
+
+// Thread do cliente para receber notificacoes e imprimir na tela
+void *notif_routine(void *args) {
+
+  client_thread_args *rargs = args;
+	int sockfd = rargs->sockfd;
+  char buffer[BUFFER_SIZE];
+
+	while(strcmp(buffer, "exit\n") != 0){
+    bzero(buffer, BUFFER_SIZE); // limpando o buffer para leitura
+
+    // Lendo do socket
+    packet received;
+    read_packet(sockfd, &received, buffer);
+    printf("%s\n", received._payload);
+    bzero(&received, sizeof(packet));
+    // ..
+
+    //fgets(buffer, BUFFER_SIZE, stdin);
   }
 
   return NULL;

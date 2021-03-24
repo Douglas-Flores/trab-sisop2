@@ -1,4 +1,3 @@
-#include <pthread.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -26,10 +25,13 @@
 // -------------------------------------------------------------
 
 profile_list *profiles;
+pthread_mutex_t notthread;
+pthread_cond_t authentication;
 
 int main(int argc, char *argv[]) {
 	int sockfd, option = 1;
 	struct sockaddr_in serv_addr;
+	setbuf(stdout, NULL);
 	
 	// Abrindo socket
 	if ((sockfd = socket(AF_INET, SOCK_STREAM, 0)) == -1)
@@ -54,27 +56,54 @@ int main(int argc, char *argv[]) {
 	load_profiles(profiles);
 	client_args *args = malloc(sizeof(args));
 	args->profiles = profiles;
+	//args->success = 0;
+	//args->parent_pid = getpid();
 	// ..
 
 	// Loop de leitura por novas requisições de conexão
-	while (2>1) {  // TODO: condição de saida
-		if (listen(sockfd, BACKLOG_MAX) == 0) {
-			int clisockfd;
-			socklen_t clilen;
-			struct sockaddr_in cli_addr;
+	if (listen(sockfd, BACKLOG_MAX) == 0) {
+		int clisockfd, notifsockfd;
 
-			// Abrindo um novo socket para comandos
-			clilen = sizeof(struct sockaddr_in);
-			if ((clisockfd = accept(sockfd, (struct sockaddr *) &cli_addr, &clilen)) == -1)
+		while (2>1) {
+			// Aceitando nova Conexão
+			struct sockaddr_in cli_addr;
+			socklen_t clilen = sizeof(struct sockaddr_in);
+			if ((clisockfd = accept(sockfd, (struct sockaddr *) &cli_addr, &clilen)) == -1) {
 				printf("ERROR on accept\n");
+				continue;
+			}
 			// ..
+
+			// Canal de notificações
+			if ((notifsockfd = accept(sockfd, (struct sockaddr *) &cli_addr, &clilen)) == -1) {
+				printf("ERROR on accepting notifications channel\n");
+				continue;
+			}
+			// ..
+
+			// Criando thread para autenticação  
+			pthread_t th;
+			args->sockfd_1 = clisockfd;
+			args->sockfd_2 = notifsockfd;
+			int *result;
+			pthread_create(&th, NULL, init_client, args);
+			pthread_join(th, (void **) &result);
+			// ..
+			
+			// Verificando resultado da autenticação
+			if (*result < 0)
+				close(notifsockfd);
 			else {
-				// Criando thread para o novo usuário conectado  
-				pthread_t th;
-				args->sockfd = clisockfd;
-				pthread_create(&th, NULL, client_thread, args);
+				// Criando thread para interação com usuário
+				pthread_t clithread;
+				args->userid = *result;
+				pthread_create(&clithread, NULL, client_thread, args);
 				// ..
 			}
+			// ..
+
+			clisockfd = 0;
+			notifsockfd = 0;
 		}
 	}
 	// ..
@@ -85,28 +114,50 @@ int main(int argc, char *argv[]) {
 	return 0; 
 }
 
-void *client_thread(void *args) {
-	
-	int n, sockfd, userid;
-	char buffer[BUFFER_SIZE];
-	profile *cur_user;
+void *init_client(void *args) {
+	int sockfd;
+	int *userid;
+	userid = malloc(sizeof(int));
 	client_args *rargs = args;
-	setbuf(stdout, NULL);
 
-	sockfd = rargs->sockfd;
+	sockfd = rargs->sockfd_1;
 	profiles = rargs->profiles;
 
-	userid = authenticate(sockfd, profiles);
-	if (userid < 0) {
+	*userid = authenticate(sockfd, profiles);
+	if (*userid < 0) {
 		printf("Falha de Autenticacao.\n");
 		close(sockfd);
-		return 0;
 	}
+	
+	pthread_exit(userid);
+}
 
-	profile_list *node = profiles;
-	for (int i = 0; i < userid; i++)
-		node = node->next;
-	cur_user = node->profile;
+void *client_thread(void *args) {
+	int n, sockfd, sockfd_n, userid;
+	char buffer[BUFFER_SIZE];			// declaração do buffer
+	profile *cur_user;					// perfil do usuário "dono" da thread
+	client_args *rargs = args;			// argumentos
+
+	setbuf(stdout, NULL);				// setanto buffer da stdout para zero
+
+	// Extração dos argurmentos
+	sockfd = rargs->sockfd_1;
+	sockfd_n = rargs->sockfd_2;
+	profiles = rargs->profiles;
+	userid = rargs->userid;
+	// ..
+
+	cur_user = get_profile_byid(profiles, userid);	// obtendo perfil do usuário
+
+	// Criando nova thread para notificações
+	pthread_t n_thread;
+	client_args *nargs = malloc(sizeof(client_args));
+	nargs->profiles = profiles;
+	nargs->sockfd_1 = -1;
+	nargs->sockfd_2 = sockfd_n;
+	nargs->userid = userid;
+	pthread_create(&n_thread, NULL, notification_thread, args);
+	// ..
 
 	while(strcmp(buffer,"exit\n") != 0){
 
@@ -154,9 +205,43 @@ void *client_thread(void *args) {
 		bzero(response, 256);
 	}
 
-	printf("%s disconnected...\n", cur_user->username);
 	cur_user->open_sessions--;
+	pthread_cancel(n_thread);
+	close(sockfd_n);
 	close(sockfd);
+	printf("%s disconnected...\n", cur_user->username);
 
 	return 0;
+}
+
+void *notification_thread(void *args) {
+	int sockfd;
+	client_args *rargs = args;			// argumentos
+
+	// Extração dos argurmentos
+	sockfd = rargs->sockfd_2;
+	// ..
+
+	// Envia um pacote a cada 10 seguntos, só para testar
+	while (5>1)
+	{
+		usleep(10000000);
+		// Criando pacote para enviar
+		packet package;
+		package.type = DATA;
+		package.seqn = 0;
+		package.timestamp = time(NULL);
+		package._payload = "mandando";
+		package.length = strlen("mandando");
+		// ..
+
+		// Enviar mensagem
+		if (send_packet(sockfd, &package) < 0)
+			break;
+		// ..
+	}
+	
+	printf("Fechando canal de notificações\n");
+
+	pthread_exit(NULL);
 }
