@@ -37,7 +37,7 @@ int main(int argc, char *argv[]) {
 	if ((sockfd = socket(AF_INET, SOCK_STREAM, 0)) == -1)
 		printf("ERROR opening socket\n");
 	setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &option, sizeof(option));  // necessário para reutilizar o socket assim que ele for fechado 
-		// ..
+	// ..
 
 	// Definindo endereço do servidor
 	serv_addr.sin_family = AF_INET;
@@ -56,8 +56,6 @@ int main(int argc, char *argv[]) {
 	load_profiles(profiles);
 	client_args *args = malloc(sizeof(args));
 	args->profiles = profiles;
-	//args->success = 0;
-	//args->parent_pid = getpid();
 	// ..
 
 	// Loop de leitura por novas requisições de conexão
@@ -215,17 +213,26 @@ void *client_thread(void *args) {
 }
 
 void *notification_thread(void *args) {
-	int sockfd;
+	int sockfd, userid;
+	profile_list *profiles;
+	profile *cur_user;
 	client_args *rargs = args;			// argumentos
 
 	// Extração dos argurmentos
 	sockfd = rargs->sockfd_2;
+	profiles = rargs->profiles;
+	userid = rargs->userid;
 	// ..
+
+	cur_user = get_profile_byid(profiles, userid);	// obtendo perfil do usuário
 
 	// Envia um pacote a cada 10 seguntos, só para testar
 	while (5>1)
 	{
-		usleep(10000000);
+		printf("%s está esperando.\n", cur_user->username);
+		sem_wait(cur_user->inbox_sem);
+		printf("%s vai receber.\n", cur_user->username);
+		
 		// Criando pacote para enviar
 		packet package;
 		package.type = DATA;

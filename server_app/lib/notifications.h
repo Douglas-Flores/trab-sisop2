@@ -29,7 +29,7 @@ typedef struct __notification_list {
 
 //  FUNCTIONS
 #ifndef _PROFILEMANAGER_
-#include "profile_manager.h"
+#include "profiles.h"
 
 int printinbox(profile *target);
 int postinbox(profile *receiver, notification *not);

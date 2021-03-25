@@ -1,6 +1,6 @@
 #include <pthread.h>
 #include <stdbool.h>
-#include "profile_manager.h"
+#include "profiles.h"
 
 typedef struct __client_args {
     profile_list *profiles;     // Lista de perfis

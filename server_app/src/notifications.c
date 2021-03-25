@@ -61,13 +61,9 @@ int new_notification(profile_list* profiles, profile *author, char* msg, char *r
         follower = get_profile_byname(profiles, fnode->profile->username);
         //printf("follower: %s / %d open sessions\n", follower->username, follower->open_sessions);
         
-        // Verificando se há sessões abertas
-        if (follower->open_sessions > 0)
-            printf("TODO: enviar para %s\n", follower->username);
-        else {
-            postinbox(follower, newnot);
-            printf ("Notificação postada na caixa postal de %s\n", follower->username);
-        }
+        sem_post(follower->inbox_sem);  // "produzindo" uma nova notificação para o usuário
+        postinbox(follower, newnot);
+        printf ("Notificação postada na caixa postal de %s\n", follower->username);
         
         fnode = fnode->next;
     }

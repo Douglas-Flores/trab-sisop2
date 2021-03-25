@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdbool.h>
-#include "../lib/profile_manager.h"
+#include "../lib/profiles.h"
 #include "../lib/com_manager.h"
 
 int load_profiles(profile_list *profiles) {
@@ -22,11 +22,14 @@ int load_profiles(profile_list *profiles) {
         notification_list *inbox = malloc(sizeof(notification_list));
         inbox->notification = NULL;
         inbox->next = NULL;
+        sem_t *inbox_sem = malloc(sizeof(sem_t));
+        sem_init(inbox_sem, 0, 0);
         profile *prof = malloc(sizeof(profile));
         prof->open_sessions = 0;
         prof->followers = followers;
         prof->notifications = notifications;
         prof->inbox = inbox;
+        prof->inbox_sem = inbox_sem;
         // ..
 
         // Lendo username

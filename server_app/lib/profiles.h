@@ -3,6 +3,7 @@
 #include <string.h>
 #include <stdint.h>
 #include <time.h>
+#include <semaphore.h>
 #include "notifications.h"
 
 #ifndef _PROFILEMANAGER_
@@ -15,6 +16,7 @@ typedef struct __profile {
     struct __profile_list *followers;           // Lista de seus seguidores
     struct __notification_list *notifications;  // Lista de seus 'tweets'
     struct __notification_list *inbox;          // Lista de notificações pendentes
+    sem_t *inbox_sem;
 } profile;
 
 typedef struct __profile_list {

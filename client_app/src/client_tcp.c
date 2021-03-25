@@ -88,6 +88,11 @@ void *cmd_routine(void *args) {
     if (strcmp(buffer, "exit\n") == 0)
       break;
     // ..
+
+    // Checando se é um comando
+    if (buffer[0] == '\n' || buffer[0] == '\0')
+      continue;
+    // ..
       
     // Escrevendo no socket
     if(strlen(buffer) > 1) {
@@ -127,11 +132,10 @@ void *notif_routine(void *args) {
     // Lendo do socket
     packet received;
     read_packet(sockfd, &received, buffer);
-    printf("%s\n", received._payload);
+    printf("\nNEW NOTIFICATION: %s\n> ", received._payload);
     bzero(&received, sizeof(packet));
     // ..
 
-    //fgets(buffer, BUFFER_SIZE, stdin);
   }
 
   return NULL;
