@@ -240,7 +240,9 @@ void *notification_thread(void *args) {
 		// ..
 
 		printf("%s está esperando notificações.\n", cur_user->username);
-		sem_wait(&(cur_user->inbox.full));
+		sem_wait(&(cur_user->inbox.full));		// esperando dados no buffer
+		sem_wait(&(cur_user->inbox.mutexC));	// garantindo exclusão mútua no consumo
+		//usleep(5000000);
 
 		// Obtendo a notificação mais recente
 		notification *n;
@@ -256,10 +258,24 @@ void *notification_thread(void *args) {
 		package.length = strlen(n->_string);
 		// ..
 
-		// Enviar mensagem
-		if (send_packet(sockfd, &package) < 0)
-			break;
-		// ..
+		char buffer[BUFFER_SIZE] = "\0";
+		while (buffer[0] == '\0') {
+			// Enviar mensagem
+			if (send_packet(sockfd, &package) < 0)
+				break;
+			// ..
+
+			// Aguardando resposta
+			int r = read(sockfd, buffer, BUFFER_SIZE);
+			if (r < 0) {
+				printf("ERROR reading from socket\n");
+				bzero(buffer, BUFFER_SIZE);
+				continue;
+			}
+			else if (strcpy(buffer,"received") != 0)
+				break;
+			// ..
+		}
 
 		// Decrementando número de usuários pendentes
 		profile *author = get_profile_byname(profiles, n->author);
@@ -270,8 +286,11 @@ void *notification_thread(void *args) {
 		// Atualizando a inbox
 		cur_user->inbox.front = (cur_user->inbox.front + 1) % INBOX_SIZE;
 		// ..
+		printf("front: %d\n", cur_user->inbox.front);
+		print_inbox(&(cur_user->inbox));
 
-		// Liberando semáforo
+		// Liberando semáforos
+		sem_post(&(cur_user->inbox.mutexC));
 		sem_post(&(cur_user->inbox.empty));
 		// ..
 	}

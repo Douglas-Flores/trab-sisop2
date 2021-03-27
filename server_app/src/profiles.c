@@ -247,19 +247,20 @@ int follow(profile_list *profiles, profile *logged, char *username, char *respon
     profile_list *fnode = to_follow->followers;
     n = 0;
     int i = 0;
-    while (fnode != NULL) {
-        if(fnode->profile == NULL) { n = -1; break;}
-            
-        if (strcmp(fnode->profile->username, logged->username) == 0) {
-            printf("Rejected: %s is already following %s\n", logged->username, username);
-            strcpy(response, "Error! You are already following ");
-            strcat(response, username);
-            n = -1;
-        }
+    if (fnode->profile != NULL)
+        while (fnode != NULL) {
+            if(fnode->profile == NULL) { n = -1; break;}
+                
+            if (strcmp(fnode->profile->username, logged->username) == 0) {
+                printf("Rejected: %s is already following %s\n", logged->username, username);
+                strcpy(response, "Error! You are already following ");
+                strcat(response, username);
+                n = -1;
+            }
 
-        fnode = fnode->next;
-        i++;
-    }
+            fnode = fnode->next;
+            i++;
+        }
 
     // Testando se ouve algum match no while anterior. Isso é importante por i precisa ser o tamanho da lista de seguidores
     if (n < 0) 
@@ -436,4 +437,18 @@ profile* create_new_profile(profile_list *profiles, char *username) {
     print_profile_list(profiles);
 
     return prof;
+}
+
+int print_inbox(inbox *inbox) {
+    notification *box;
+    box = inbox->inbox;
+
+    int i = 0;
+    while (i < inbox->rear)
+    {
+        printf("Message %i: %s\n", i, box[i]._string);
+        i++;
+    }
+    
+    return 0;
 }

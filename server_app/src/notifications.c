@@ -67,10 +67,13 @@ int new_notification(profile_list* profiles, profile *author, char* msg, char *r
         free(s1);*/
         
         // "Produzindo" uma nova notificação para o usuário
-        sem_wait(&(follower->inbox.empty));    // decrementando empty
+        sem_wait(&(follower->inbox.empty));     // decrementando empty
+        sem_wait(&(follower->inbox.mutexP));    // garantindo exclusão mútua na escrita
         postinbox(follower, newnot);            // produzindo
-        sem_post(&(follower->inbox.full));     // incrementando full
-        printf ("Notificação postada na caixa postal de %s\n", follower->username);
+        sem_post(&(follower->inbox.mutexP));    // liberando lock de exclusão mútua
+        sem_post(&(follower->inbox.full));      // incrementando full
+        //printf ("Notificação (%s) postada na caixa postal de %s\n", follower->inbox.inbox[follower->inbox.rear-1]._string, follower->username);
+        print_inbox(&(follower->inbox));
         // ..
 
         fnode = fnode->next;
@@ -85,12 +88,10 @@ int postinbox(profile *receiver, notification *not) {
     ptr_inbox = &(receiver->inbox);
     notification *inbox = ptr_inbox->inbox;
 
-    printf("MESSAGE %s rear: %d\n", not->_string, ptr_inbox->rear);
-    int n = ptr_inbox->rear;
-    printf("MESSAGE %s rear: %d\n", not->_string, n);
     // Insere na inbox 
+    int n = ptr_inbox->rear;
     inbox[n] = *not;
-    ptr_inbox->rear = (ptr_inbox->rear+1) % INBOX_SIZE;
+    ptr_inbox->rear = (n + 1) % INBOX_SIZE;
     // ..
 
     return 0;

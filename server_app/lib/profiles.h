@@ -43,5 +43,6 @@ int authenticate(int socket, profile_list *profiles);
 int follow(profile_list *profiles, profile *logged, char *username, char *response);
 int count_followers(profile *user);
 profile* create_new_profile(profile_list *profiles, char *username);
+int print_inbox(inbox *inbox);
 
 #endif

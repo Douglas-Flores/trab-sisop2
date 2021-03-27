@@ -145,6 +145,18 @@ void *notif_routine(void *args) {
     bzero(&received, sizeof(packet));
     // ..
 
+    // Enviando resposta
+    packet package;
+    package.type = DATA;
+    package.seqn = 0;
+    package.timestamp = time(NULL);
+    package._payload = malloc(sizeof("received"));
+    strcpy(package._payload, "received");
+    package.length = strlen("received");
+    send_packet(sockfd, &package);
+    free(package._payload);
+    // ..
+
   }
 
   return NULL;
