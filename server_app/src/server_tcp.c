@@ -227,24 +227,42 @@ void *notification_thread(void *args) {
 	cur_user = get_profile_byid(profiles, userid);	// obtendo perfil do usuário
 
 	// Envia um pacote a cada 10 seguntos, só para testar
-	while (5>1)
+	while (true)
 	{
 		printf("%s está esperando.\n", cur_user->username);
 		sem_wait(cur_user->inbox_sem);
 		printf("%s vai receber.\n", cur_user->username);
+
+		// Obtendo a notificação mais recente
+		notification *n;
+		n = cur_user->inbox->notification;
+		// ..
 		
 		// Criando pacote para enviar
 		packet package;
 		package.type = DATA;
 		package.seqn = 0;
 		package.timestamp = time(NULL);
-		package._payload = "mandando";
-		package.length = strlen("mandando");
+		package._payload = n->_string;
+		package.length = strlen(n->_string);
 		// ..
 
 		// Enviar mensagem
 		if (send_packet(sockfd, &package) < 0)
 			break;
+		// ..
+
+		// Decrementando número de usuários pendentes
+		profile *author = get_profile_byname(profiles, n->author);
+		notification *p = get_notification_byid(author->notifications, n->id);
+		p->pending = p->pending - 1;
+		// ..
+
+		// Atualizando a inbox
+		notification_list *oldinbox = cur_user->inbox;
+		cur_user->inbox = cur_user->inbox->next;
+		free(n);
+		free(oldinbox);
 		// ..
 	}
 	

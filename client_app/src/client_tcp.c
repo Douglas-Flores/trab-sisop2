@@ -8,9 +8,12 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <netdb.h>
+#include <semaphore.h>
 #include "../lib/com_manager.h"
 
 #define PORT 4000
+
+sem_t sem_buffer;
 
 int main(int argc, char *argv[]) {
   
@@ -53,13 +56,18 @@ int main(int argc, char *argv[]) {
   args_cmd->sockfd = sockfd;
   client_thread_args *args_not = malloc(sizeof(client_thread_args));
   args_not->sockfd = notifsockfd;
+  // ..
+
+  sem_init(&sem_buffer, 0, 0);
 
   // Executa threads de envio de comandos e recepcao de notificacoes ate que terminem
   pthread_t cmd_thread, notif_thread;
   pthread_create(&cmd_thread, NULL, cmd_routine, args_cmd);
   pthread_create(&notif_thread, NULL, notif_routine, args_not);
   pthread_join(cmd_thread, NULL);
+  pthread_cancel(notif_thread);
   pthread_join(notif_thread, NULL);
+  // ..
 
   // Fechando o socket
 	close(sockfd);
@@ -126,7 +134,8 @@ void *notif_routine(void *args) {
 	int sockfd = rargs->sockfd;
   char buffer[BUFFER_SIZE];
 
-	while(strcmp(buffer, "exit\n") != 0){
+	while(true){
+    setbuf(stdout, NULL);
     bzero(buffer, BUFFER_SIZE); // limpando o buffer para leitura
 
     // Lendo do socket

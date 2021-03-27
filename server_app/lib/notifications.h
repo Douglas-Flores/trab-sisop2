@@ -33,6 +33,7 @@ typedef struct __notification_list {
 
 int printinbox(profile *target);
 int postinbox(profile *receiver, notification *not);
+notification* get_notification_byid(notification_list *list, int id);
 int new_notification(profile_list* profiles, profile *author, char* msg, char *response);
 
 #endif

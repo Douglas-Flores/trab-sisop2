@@ -1,5 +1,6 @@
 #include <stdint.h>
 #include <time.h>
+#include <stdbool.h>
 
 #define DATA 1
 #define CMD 2

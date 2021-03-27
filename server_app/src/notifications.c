@@ -106,3 +106,21 @@ int printinbox(profile *target) {
 
     return 0;
 }
+
+notification* get_notification_byid(notification_list *list, int id) {
+    
+    notification_list *node = list;
+
+    if(node->notification == NULL)
+        return NULL;
+    
+    while (node != NULL) {
+        
+        if(node->notification->id == id)
+            break;
+        
+        node = node->next;
+    }
+
+    return node->notification;
+}
