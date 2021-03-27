@@ -195,8 +195,10 @@ int authenticate(int socket, profile_list *profiles){
     profile *user;
     if (n >= 0)
         user = get_profile_byid(profiles, n);
-    else
-        user = NULL;
+    else {
+        user = create_new_profile(profiles, buffer);
+        n = validate_profile(buffer, profiles);
+    }
     // ..
 
 	// Criando pacote para enviar
@@ -382,4 +384,56 @@ void print_profile_list(profile_list *list) {
     }
 
     free(s1);
+}
+
+profile* create_new_profile(profile_list *profiles, char *username) {
+	profile_list *pnode = profiles;
+
+    // Criando novo perfil
+    profile_list *followers = malloc(sizeof(profile_list));
+    followers->profile = NULL;
+    followers->next = NULL;
+    notification_list *notifications = malloc(sizeof(notification_list));
+    notifications->notification = NULL;
+    notifications->next = NULL;
+    inbox inbox;
+    sem_t *empty = malloc(sizeof(sem_t));
+    sem_init(empty, 0, INBOX_SIZE);
+    sem_t *full = malloc(sizeof(sem_t));
+    sem_init(full, 0, 0);
+    sem_t *mutexP = malloc(sizeof(sem_t));
+    sem_init(mutexP, 0, 1);
+    sem_t *mutexC = malloc(sizeof(sem_t));
+    sem_init(mutexC, 0, 1);
+    profile *prof = malloc(sizeof(profile));
+    inbox.empty = *empty;
+    inbox.full = *full;
+    inbox.mutexP = *mutexP;
+    inbox.mutexC = *mutexC;
+    inbox.front = 0;
+    inbox.rear = 0;
+    prof->open_sessions = 0;
+    prof->followers = followers;
+    prof->notifications = notifications;
+    prof->inbox = inbox;
+    strcpy(prof->username, username);
+    // ..
+
+    // Inserindo profile na lista
+	if (profiles->profile == NULL)
+        pnode->profile = prof;
+    else {
+		while (pnode->next != NULL)
+			pnode = pnode->next;
+        
+        profile_list *newnode = malloc(sizeof(profile_list));
+        newnode->profile = prof;
+        newnode->next = NULL;
+        pnode->next = newnode;
+    }
+	// ..
+
+    print_profile_list(profiles);
+
+    return prof;
 }
