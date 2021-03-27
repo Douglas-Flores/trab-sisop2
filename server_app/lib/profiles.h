@@ -9,14 +9,24 @@
 #ifndef _PROFILEMANAGER_
 #define _PROFILEMANAGER_
 #define MAX_SESSIONS 2
+#define INBOX_SIZE 16
+
+typedef struct __inbox {
+    struct __notification inbox[INBOX_SIZE];    // Array de notificações
+    sem_t empty;                                // Semáforo empty
+    sem_t full;                                 // Semáforo full
+    sem_t mutexP;                               // Mutex dos produtores
+    sem_t mutexC;                               // Mutex dos consumidores
+    int front;
+    int rear;
+} inbox;
 
 typedef struct __profile {
     char username[20];                          // Nome de usuário
     int open_sessions;                          // Número de sessões abertas
     struct __profile_list *followers;           // Lista de seus seguidores
     struct __notification_list *notifications;  // Lista de seus 'tweets'
-    struct __notification_list *inbox;          // Lista de notificações pendentes
-    sem_t *inbox_sem;
+    struct __inbox inbox;                      // Lista de notificações pendentes
 } profile;
 
 typedef struct __profile_list {
@@ -24,6 +34,7 @@ typedef struct __profile_list {
     struct __profile_list *next;    // Próximo da lista
 } profile_list;
 
+void print_profile_list(profile_list *list);
 int load_profiles(profile_list *profiles);
 profile* get_profile_byname(profile_list *list, char *username);
 profile* get_profile_byid(profile_list *list, int id);

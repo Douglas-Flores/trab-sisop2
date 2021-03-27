@@ -60,11 +60,19 @@ int new_notification(profile_list* profiles, profile *author, char* msg, char *r
         // Obtendo perfil do seguidor
         follower = get_profile_byname(profiles, fnode->profile->username);
         //printf("follower: %s / %d open sessions\n", follower->username, follower->open_sessions);
+
+        /*int *s1 = malloc(sizeof(int));
+        sem_getvalue(&(follower->inbox->empty), s1);
+        printf("%s, empty (%d)\n", follower->username, *s1);
+        free(s1);*/
         
-        sem_post(follower->inbox_sem);  // "produzindo" uma nova notificação para o usuário
-        postinbox(follower, newnot);
+        // "Produzindo" uma nova notificação para o usuário
+        sem_wait(&(follower->inbox.empty));    // decrementando empty
+        postinbox(follower, newnot);            // produzindo
+        sem_post(&(follower->inbox.full));     // incrementando full
         printf ("Notificação postada na caixa postal de %s\n", follower->username);
-        
+        // ..
+
         fnode = fnode->next;
     }
     // ..
@@ -73,35 +81,29 @@ int new_notification(profile_list* profiles, profile *author, char* msg, char *r
 }
 
 int postinbox(profile *receiver, notification *not) {
-    notification_list *list;
-    list = receiver->inbox;
-    
-    // Insere na inbox  SESSÃO CRÍTICA
-    if(list->notification == NULL)
-        list->notification = not;
-    else {
-        notification_list *newnode;
-        newnode = malloc(sizeof(notification_list));
-        newnode->notification = not;
-        newnode->next = NULL;
-        
-        while (list->next != NULL)
-            list = list->next;
-        
-        list->next = newnode;  
-    }
-    // ..   FIM DA SESSÃO CRÍTICA
+    inbox *ptr_inbox;
+    ptr_inbox = &(receiver->inbox);
+    notification *inbox = ptr_inbox->inbox;
+
+    printf("MESSAGE %s rear: %d\n", not->_string, ptr_inbox->rear);
+    int n = ptr_inbox->rear;
+    printf("MESSAGE %s rear: %d\n", not->_string, n);
+    // Insere na inbox 
+    inbox[n] = *not;
+    ptr_inbox->rear = (ptr_inbox->rear+1) % INBOX_SIZE;
+    // ..
 
     return 0;
 }
 
 int printinbox(profile *target) {
-    notification_list *list;
-    list = target->inbox;
-        
-    while (list != NULL) {
-        printf("%s\n", list->notification->_string);
-        list = list->next;
+    notification *inbox;
+    inbox = target->inbox.inbox;
+    
+    int i = 0;
+    while (inbox[i]._string != NULL) {
+        printf("%s\n", inbox[i]._string);
+        i++;
     }
 
     return 0;

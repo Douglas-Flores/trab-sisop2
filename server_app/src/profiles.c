@@ -19,17 +19,26 @@ int load_profiles(profile_list *profiles) {
         notification_list *notifications = malloc(sizeof(notification_list));
         notifications->notification = NULL;
         notifications->next = NULL;
-        notification_list *inbox = malloc(sizeof(notification_list));
-        inbox->notification = NULL;
-        inbox->next = NULL;
-        sem_t *inbox_sem = malloc(sizeof(sem_t));
-        sem_init(inbox_sem, 0, 0);
+        inbox inbox;
+        sem_t *empty = malloc(sizeof(sem_t));
+        sem_init(empty, 0, INBOX_SIZE);
+        sem_t *full = malloc(sizeof(sem_t));
+        sem_init(full, 0, 0);
+        sem_t *mutexP = malloc(sizeof(sem_t));
+        sem_init(mutexP, 0, 1);
+        sem_t *mutexC = malloc(sizeof(sem_t));
+        sem_init(mutexC, 0, 1);
         profile *prof = malloc(sizeof(profile));
+        inbox.empty = *empty;
+        inbox.full = *full;
+        inbox.mutexP = *mutexP;
+        inbox.mutexC = *mutexC;
+        inbox.front = 0;
+        inbox.rear = 0;
         prof->open_sessions = 0;
         prof->followers = followers;
         prof->notifications = notifications;
         prof->inbox = inbox;
-        prof->inbox_sem = inbox_sem;
         // ..
 
         // Lendo username
@@ -101,6 +110,8 @@ int load_profiles(profile_list *profiles) {
             not->pending = atoi(buffer);
             //printf("%d]\n", not->pending);
 
+            strcpy(not->author, prof->username);
+
             if(first_not) {
                 notnode->notification = not;
                 notnode->next = NULL;
@@ -134,8 +145,19 @@ int load_profiles(profile_list *profiles) {
             pnode->next = newpnode;
             pnode = newpnode;
         }
+        /*int *s1 = malloc(sizeof(int));
+        printf("%s {", pnode->profile->username);
+        sem_getvalue(&(pnode->profile->inbox->empty), s1);
+        printf("empty: %d}\n", *s1);
+        free(s1);*/
+
+        //print_profile_list(profiles);
+
+        //printf("\n\n-----------------------------------------------\n");
 
     } while (true);
+
+    //print_profile_list(profiles);
 
     fclose(db);
     return -1;
@@ -311,4 +333,53 @@ profile* get_profile_byid(profile_list *list, int id) {
     }
 
     return node->profile;
+}
+
+void print_profile_list(profile_list *list) {
+    profile_list *node = list;
+    profile *prof;
+    int *s1 = malloc(sizeof(int));
+
+    while (node != NULL)
+    {
+        prof = node->profile;
+        printf("%s {\n", prof->username);
+        printf("  open sessions: %d\n", prof->open_sessions);
+        sem_getvalue(&(prof->inbox.empty), s1);
+        printf("  empty: %d\n", *s1);
+        sem_getvalue(&(prof->inbox.full), s1);
+        printf("  full: %d\n", *s1);
+        sem_getvalue(&(prof->inbox.mutexP), s1);
+        printf("  mutexP: %d\n", *s1);
+        printf("  front: %d\n", prof->inbox.front);
+        printf("  rear: %d\n", prof->inbox.rear);
+        printf("  followers: \n");
+        profile_list *flw = prof->followers;
+        while (flw != NULL) {
+            printf("    %s\n", flw->profile->username);
+            flw = flw->next;
+        }
+        printf("  notifications: \n");
+        notification_list *not = prof->notifications;
+        while (not != NULL) {
+            if(not->notification == NULL)
+                break;
+            printf("    [");
+            printf("%d, ",not->notification->id);
+            printf("%s, ",not->notification->author);
+            printf("%d, ",not->notification->timestamp);
+            printf("%s, ",not->notification->_string);
+            printf("%d, ",not->notification->length);
+            printf("%d",not->notification->pending);
+            printf("]\n");
+            not = not->next;
+        }
+        
+        
+        printf("}\n");
+
+        node = node->next;
+    }
+
+    free(s1);
 }

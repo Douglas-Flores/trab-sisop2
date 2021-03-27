@@ -56,6 +56,7 @@ int main(int argc, char *argv[]) {
 	load_profiles(profiles);
 	client_args *args = malloc(sizeof(args));
 	args->profiles = profiles;
+	//print_profile_list(profiles);
 	// ..
 
 	// Loop de leitura por novas requisições de conexão
@@ -217,6 +218,7 @@ void *notification_thread(void *args) {
 	profile_list *profiles;
 	profile *cur_user;
 	client_args *rargs = args;			// argumentos
+	setbuf(stdout, NULL);
 
 	// Extração dos argurmentos
 	sockfd = rargs->sockfd_2;
@@ -226,18 +228,25 @@ void *notification_thread(void *args) {
 
 	cur_user = get_profile_byid(profiles, userid);	// obtendo perfil do usuário
 
-	// Envia um pacote a cada 10 seguntos, só para testar
 	while (true)
 	{
-		printf("%s está esperando.\n", cur_user->username);
-		sem_wait(cur_user->inbox_sem);
-		printf("%s vai receber.\n", cur_user->username);
+		// DEBUG
+		/*
+		int *s1 = malloc(sizeof(int));
+        sem_getvalue(&(cur_user->inbox.empty), s1);
+        printf("%s, empty (%d)\n", cur_user->username, *s1);
+        free(s1);
+		*/
+		// ..
+
+		printf("%s está esperando notificações.\n", cur_user->username);
+		sem_wait(&(cur_user->inbox.full));
 
 		// Obtendo a notificação mais recente
 		notification *n;
-		n = cur_user->inbox->notification;
+		n = &((cur_user->inbox.inbox)[cur_user->inbox.front]);
 		// ..
-		
+
 		// Criando pacote para enviar
 		packet package;
 		package.type = DATA;
@@ -259,10 +268,11 @@ void *notification_thread(void *args) {
 		// ..
 
 		// Atualizando a inbox
-		notification_list *oldinbox = cur_user->inbox;
-		cur_user->inbox = cur_user->inbox->next;
-		free(n);
-		free(oldinbox);
+		cur_user->inbox.front = (cur_user->inbox.front + 1) % INBOX_SIZE;
+		// ..
+
+		// Liberando semáforo
+		sem_post(&(cur_user->inbox.empty));
 		// ..
 	}
 	
