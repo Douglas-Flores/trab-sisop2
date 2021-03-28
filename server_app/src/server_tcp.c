@@ -265,12 +265,16 @@ void *notification_thread(void *args) {
 		// ..
 
 		// Criando pacote para enviar
+		char *msg = malloc(sizeof(char)*148);
+		strcat(msg,n->author);
+		strcat(msg,": ");
+		strcat(msg,n->_string);
 		packet package;
 		package.type = DATA;
 		package.seqn = 0;
 		package.timestamp = time(NULL);
-		package._payload = n->_string;
-		package.length = strlen(n->_string);
+		package._payload = msg;
+		package.length = strlen(msg);
 		// ..
 
 		char buffer[BUFFER_SIZE] = "\0";
@@ -291,6 +295,7 @@ void *notification_thread(void *args) {
 				break;
 			// ..
 		}
+		free(msg);
 
 		// Decrementando número de usuários pendentes
 		profile *author = get_profile_byname(profiles, n->author);

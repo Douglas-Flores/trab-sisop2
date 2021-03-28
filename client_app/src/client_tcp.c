@@ -58,7 +58,7 @@ int main(int argc, char *argv[]) {
   args_not->sockfd = notifsockfd;
   // ..
 
-  sem_init(&sem_buffer, 0, 0);
+  sem_init(&sem_buffer, 0, 1);
 
   // Executa threads de envio de comandos e recepcao de notificacoes ate que terminem
   pthread_t cmd_thread, notif_thread;
@@ -87,9 +87,11 @@ void *cmd_routine(void *args) {
   // Loop de interação
   while (strcmp(buffer, "exit\n") != 0) {
     // Iniciando leitura de comandos
+    //sem_wait(&sem_buffer);
     printf("> ");
     bzero(buffer, BUFFER_SIZE);
     fgets(buffer, BUFFER_SIZE, stdin);
+    //sem_post(&sem_buffer);
     // ..
 
     // Checando comando de exit
@@ -141,7 +143,9 @@ void *notif_routine(void *args) {
     // Lendo do socket
     packet received;
     read_packet(sockfd, &received, buffer);
-    printf("\nNEW NOTIFICATION: %s\n> ", received._payload);
+    //sem_wait(&sem_buffer);
+    printf("\n%s\n> ", received._payload);
+    //sem_post(&sem_buffer);
     bzero(&received, sizeof(packet));
     // ..
 
