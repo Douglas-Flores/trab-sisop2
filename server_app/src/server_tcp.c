@@ -295,6 +295,41 @@ void *notification_thread(void *args) {
 				break;
 			// ..
 		}
+
+		// Caso haja mais de uma sessão aberta
+		if (cur_user->open_sessions > 1) {
+			bzero(buffer, BUFFER_SIZE);
+			buffer[0] = '\0';
+
+			if (session->id == 1)
+				sockfd = cur_user->session_2.nsockfd;
+			else
+				sockfd = cur_user->session_1.nsockfd;
+			
+			while (buffer[0] == '\0') {
+				// Enviar mensagem
+				if (send_packet(sockfd, &package) < 0)
+					break;
+				// ..
+
+				// Aguardando resposta
+				int r = read(sockfd, buffer, BUFFER_SIZE);
+				if (r < 0) {
+					printf("ERROR reading from socket\n");
+					bzero(buffer, BUFFER_SIZE);
+					continue;
+				}
+				else if (strcpy(buffer,"received") != 0) {
+					printf("Caiu aqui\n");
+					break;
+				}
+				// ..
+			}
+			printf("Respondeu\n");
+			sockfd = session->nsockfd;
+		}
+		// ..
+
 		free(msg);
 
 		// Decrementando número de usuários pendentes
@@ -304,14 +339,13 @@ void *notification_thread(void *args) {
 			p->pending = p->pending - 1;
 		if (p->pending < 1)
 			destroy_notification(author->notifications, p->id);
-		print_profile_list(profiles);
+		//print_profile_list(profiles);
 		// ..
 
 		// Atualizando a inbox
 		cur_user->inbox.front = (cur_user->inbox.front + 1) % INBOX_SIZE;
 		// ..
-		printf("front: %d\n", cur_user->inbox.front);
-		print_inbox(&(cur_user->inbox));
+		//print_inbox(&(cur_user->inbox));
 
 		// Liberando semáforos
 		sem_post(&(cur_user->inbox.mutexC));
