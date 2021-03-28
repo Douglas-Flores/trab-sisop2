@@ -1,3 +1,8 @@
+/*
+    Author: Douglas Souza Flôres
+    Biblioteca para manipulação de perfis e sessões de uso
+*/
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -13,12 +18,16 @@ int load_profiles(profile_list *profiles) {
     bool first_read = true;
     do {
         // Iniciando variáveis
+        profile *prof = malloc(sizeof(profile));
+
         profile_list *followers = malloc(sizeof(profile_list));
         followers->profile = NULL;
         followers->next = NULL;
+        
         notification_list *notifications = malloc(sizeof(notification_list));
         notifications->notification = NULL;
         notifications->next = NULL;
+        
         inbox inbox;
         sem_t *empty = malloc(sizeof(sem_t));
         sem_init(empty, 0, INBOX_SIZE);
@@ -28,14 +37,30 @@ int load_profiles(profile_list *profiles) {
         sem_init(mutexP, 0, 1);
         sem_t *mutexC = malloc(sizeof(sem_t));
         sem_init(mutexC, 0, 1);
-        profile *prof = malloc(sizeof(profile));
         inbox.empty = *empty;
         inbox.full = *full;
         inbox.mutexP = *mutexP;
         inbox.mutexC = *mutexC;
         inbox.front = 0;
         inbox.rear = 0;
+        
+        session_t session_1;
+        session_1.id = 1;
+        session_1.isopen = false;
+        session_1.cmdsockfd = 0;
+        session_1.nsockfd = 0;
+        session_1.owner = prof;
+
+        session_t session_2;
+        session_2.id = 2;
+        session_2.isopen = false;
+        session_2.cmdsockfd = 0;
+        session_2.nsockfd = 0;
+        session_2.owner = prof;
+
         prof->open_sessions = 0;
+        prof->session_1 = session_1;
+        prof->session_2 = session_2;
         prof->followers = followers;
         prof->notifications = notifications;
         prof->inbox = inbox;
@@ -160,7 +185,7 @@ int load_profiles(profile_list *profiles) {
     //print_profile_list(profiles);
 
     fclose(db);
-    return -1;
+    return 0;
 }
 
 int validate_profile(char *username, profile_list *list) {

@@ -1,5 +1,11 @@
+/*
+    Author: Douglas Souza Flôres
+    Biblioteca para manipulação de perfis e sessões de uso
+*/
+
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdbool.h>
 #include <string.h>
 #include <stdint.h>
 #include <time.h>
@@ -21,12 +27,22 @@ typedef struct __inbox {
     int rear;
 } inbox;
 
+typedef struct __session {
+    struct __profile *owner;
+    int id;
+    bool isopen;
+    int cmdsockfd;
+    int nsockfd;
+} session_t;
+
 typedef struct __profile {
     char username[20];                          // Nome de usuário
     int open_sessions;                          // Número de sessões abertas
+    struct __session session_1;
+    struct __session session_2;
     struct __profile_list *followers;           // Lista de seus seguidores
     struct __notification_list *notifications;  // Lista de seus 'tweets'
-    struct __inbox inbox;                      // Lista de notificações pendentes
+    struct __inbox inbox;                       // Lista de notificações pendentes
 } profile;
 
 typedef struct __profile_list {

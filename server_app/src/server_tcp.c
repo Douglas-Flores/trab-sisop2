@@ -10,9 +10,11 @@
 #include <ctype.h>
 #include <time.h>
 #include <arpa/inet.h>
+#include <signal.h>
 #include "../lib/com_manager.h"
 #include "../lib/database.h"
 #include "../lib/notifications.h"
+//#include "../lib/files.h"
 
 #define PORT 4000
 
@@ -27,6 +29,7 @@
 profile_list *profiles;
 pthread_mutex_t notthread;
 pthread_cond_t authentication;
+void INThandler(int);
 
 int main(int argc, char *argv[]) {
 	int sockfd, option = 1;
@@ -56,9 +59,10 @@ int main(int argc, char *argv[]) {
 	load_profiles(profiles);
 	client_args *args = malloc(sizeof(args));
 	args->profiles = profiles;
-	//print_profile_list(profiles);
+	init_notid(profiles);
 	// ..
 
+	signal(SIGINT, INThandler);
 	// Loop de leitura por novas requisições de conexão
 	if (listen(sockfd, BACKLOG_MAX) == 0) {
 		int clisockfd, notifsockfd;
@@ -136,6 +140,7 @@ void *client_thread(void *args) {
 	char buffer[BUFFER_SIZE];			// declaração do buffer
 	profile *cur_user;					// perfil do usuário "dono" da thread
 	client_args *rargs = args;			// argumentos
+	session_t *cur_session;
 
 	setbuf(stdout, NULL);				// setanto buffer da stdout para zero
 
@@ -147,15 +152,27 @@ void *client_thread(void *args) {
 	// ..
 
 	cur_user = get_profile_byid(profiles, userid);	// obtendo perfil do usuário
+	
+	if (cur_user->session_1.isopen == false) {
+		cur_user->session_1.isopen = true;
+		cur_user->session_1.cmdsockfd = sockfd;
+		cur_user->session_1.nsockfd = sockfd_n;
+		cur_session = &(cur_user->session_1);
+	}
+	else if (cur_user->session_2.isopen == false) {
+		cur_user->session_2.isopen = true;
+		cur_user->session_2.cmdsockfd = sockfd;
+		cur_user->session_2.nsockfd = sockfd_n;
+		cur_session = &(cur_user->session_2);;
+	}
+	else {
+		cur_session = NULL;
+	}
 
 	// Criando nova thread para notificações
 	pthread_t n_thread;
-	client_args *nargs = malloc(sizeof(client_args));
-	nargs->profiles = profiles;
-	nargs->sockfd_1 = -1;
-	nargs->sockfd_2 = sockfd_n;
-	nargs->userid = userid;
-	pthread_create(&n_thread, NULL, notification_thread, args);
+	printf("Session %d opened\n", cur_session->id);
+	pthread_create(&n_thread, NULL, notification_thread, cur_session);
 	// ..
 
 	while(strcmp(buffer,"exit\n") != 0){
@@ -205,6 +222,7 @@ void *client_thread(void *args) {
 	}
 
 	cur_user->open_sessions--;
+	cur_session->isopen = false;
 	pthread_cancel(n_thread);
 	close(sockfd_n);
 	close(sockfd);
@@ -214,19 +232,16 @@ void *client_thread(void *args) {
 }
 
 void *notification_thread(void *args) {
-	int sockfd, userid;
-	profile_list *profiles;
+	int sockfd;
 	profile *cur_user;
-	client_args *rargs = args;			// argumentos
+	session_t *session = args;			// argumentos
 	setbuf(stdout, NULL);
 
 	// Extração dos argurmentos
-	sockfd = rargs->sockfd_2;
-	profiles = rargs->profiles;
-	userid = rargs->userid;
+	sockfd = session->nsockfd;
 	// ..
 
-	cur_user = get_profile_byid(profiles, userid);	// obtendo perfil do usuário
+	cur_user = session->owner;			// obtendo perfil do usuário
 
 	while (true)
 	{
@@ -280,7 +295,11 @@ void *notification_thread(void *args) {
 		// Decrementando número de usuários pendentes
 		profile *author = get_profile_byname(profiles, n->author);
 		notification *p = get_notification_byid(author->notifications, n->id);
-		p->pending = p->pending - 1;
+		if (p->pending > 0)
+			p->pending = p->pending - 1;
+		if (p->pending < 1)
+			destroy_notification(author->notifications, p->id);
+		print_profile_list(profiles);
 		// ..
 
 		// Atualizando a inbox
@@ -298,4 +317,11 @@ void *notification_thread(void *args) {
 	printf("Fechando canal de notificações\n");
 
 	pthread_exit(NULL);
+}
+
+void INThandler(int sig) {
+	signal(sig, SIG_IGN);
+	printf("\nSalvando status do banco de dados...\n");
+	//save_profile_list(profiles);
+	exit(0);
 }

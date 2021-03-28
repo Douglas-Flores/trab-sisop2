@@ -1,10 +1,5 @@
-#include <stdio.h>
-#include <string.h>
-#include "../lib/profile_manager.h"
-#include <inttypes.h>
-
-
-
+#include "../lib/files.h"
+#include "../lib/profiles.h"
 
 int write_to_file(int count, struct profile *data, char const *fileName)
 {
@@ -89,6 +84,8 @@ char *notification_to_string(notification * notification) {
 }
 
 char *notification_list_to_string(notification_list * notificationList) {
+    char* finalString = malloc(sizeof(char)*256);
+    
     if(notificationList == NULL) {
         return "[]";
     }
@@ -132,7 +129,6 @@ char *notification_list_to_string(notification_list * notificationList) {
     }
     free(listStringNotifications);
 
-
     return finalString;
 }
 
@@ -149,7 +145,7 @@ char* profile_to_string(profile currentProfile){
     strcat(profileString, ",");
 
     strcat(profileString, notificationString);
-    return profileString;
+    return notificationString;
 }
 
 void save_profile_list(profile_list * profileList) {
@@ -177,7 +173,7 @@ void save_profile_list(profile_list * profileList) {
     while(profileIterator->next != NULL) {
 
         profileIterator =  profileIterator->next;
-
+        printf(".\n");
         char* profileString = profile_to_string(*profileIterator->profile);
         fprintf(file, profileString);
         free(profileString);
