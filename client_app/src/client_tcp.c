@@ -141,16 +141,29 @@ void *notif_routine(void *args) {
     bzero(buffer, BUFFER_SIZE); // limpando o buffer para leitura
 
     // Lendo do socket
-    packet received;
-    read_packet(sockfd, &received, buffer);
-    //sem_wait(&sem_buffer);
+    packet received, package;
+    int n = read_packet(sockfd, &received, buffer);
+    if (n < 0) {
+      // Enviando requisição de reenvio
+      /*package.type = DATA;
+      package.seqn = 0;
+      package.timestamp = time(NULL);
+      package._payload = malloc(sizeof("resend"));
+      strcpy(package._payload, "resend");
+      package.length = strlen("resend");
+      send_packet(sockfd, &package);*/
+      printf("Notification lost, retrying...\n");
+      /*bzero(package._payload,strlen("resend"));
+      free(package._payload);*/
+      //n = read_packet(sockfd, &received, buffer);
+      // ..
+    }
+    
     printf("\n%s\n> ", received._payload);
-    //sem_post(&sem_buffer);
     bzero(&received, sizeof(packet));
     // ..
 
     // Enviando resposta
-    packet package;
     package.type = DATA;
     package.seqn = 0;
     package.timestamp = time(NULL);
@@ -158,6 +171,7 @@ void *notif_routine(void *args) {
     strcpy(package._payload, "received");
     package.length = strlen("received");
     send_packet(sockfd, &package);
+    bzero(package._payload,strlen("received"));
     free(package._payload);
     // ..
 

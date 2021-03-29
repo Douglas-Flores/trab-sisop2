@@ -67,11 +67,6 @@ int new_notification(profile_list* profiles, profile *author, char* msg, char *r
     while (fnode != NULL) {
         // Obtendo perfil do seguidor
         follower = get_profile_byname(profiles, fnode->profile->username);
-
-        /*int *s1 = malloc(sizeof(int));
-        sem_getvalue(&(follower->inbox->empty), s1);
-        printf("%s, empty (%d)\n", follower->username, *s1);
-        free(s1);*/
         
         // "Produzindo" uma nova notificação para o usuário
         sem_wait(&(follower->inbox.empty));     // decrementando empty
@@ -79,7 +74,6 @@ int new_notification(profile_list* profiles, profile *author, char* msg, char *r
         postinbox(follower, newnot);            // produzindo
         sem_post(&(follower->inbox.mutexP));    // liberando lock de exclusão mútua
         sem_post(&(follower->inbox.full));      // incrementando full
-        print_inbox(&(follower->inbox));
         // ..
 
         fnode = fnode->next;

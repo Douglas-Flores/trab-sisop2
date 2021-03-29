@@ -245,19 +245,10 @@ void *notification_thread(void *args) {
 
 	while (true)
 	{
-		// DEBUG
-		/*
-		int *s1 = malloc(sizeof(int));
-        sem_getvalue(&(cur_user->inbox.empty), s1);
-        printf("%s, empty (%d)\n", cur_user->username, *s1);
-        free(s1);
-		*/
-		// ..
 
 		printf("%s está esperando notificações.\n", cur_user->username);
 		sem_wait(&(cur_user->inbox.full));		// esperando dados no buffer
 		sem_wait(&(cur_user->inbox.mutexC));	// garantindo exclusão mútua no consumo
-		//usleep(5000000);
 
 		// Obtendo a notificação mais recente
 		notification *n;
@@ -274,25 +265,41 @@ void *notification_thread(void *args) {
 		package.seqn = 0;
 		package.timestamp = time(NULL);
 		package._payload = msg;
-		package.length = strlen(msg);
+		package.length = strlen(msg)+1;
 		// ..
 
 		char buffer[BUFFER_SIZE] = "\0";
 		while (buffer[0] == '\0') {
 			// Enviar mensagem
+			printf("send %s para %s\n", msg, cur_user->username);
 			if (send_packet(sockfd, &package) < 0)
-				break;
+				continue;
 			// ..
 
 			// Aguardando resposta
 			int r = read(sockfd, buffer, BUFFER_SIZE);
 			if (r < 0) {
-				printf("ERROR reading from socket\n");
+				printf("Notificação de %s perdida.\n", cur_user->username);
 				bzero(buffer, BUFFER_SIZE);
-				continue;
 			}
-			else if (strcpy(buffer,"received") != 0)
+
+			if (strcmp(buffer,"resend") == 0) {
+				printf("Resposta3 %s\n", buffer);
+				usleep(100000);
+				bzero(buffer, BUFFER_SIZE);
 				break;
+			} 
+			else if (strcmp(buffer,"received") == 0){
+				printf("Resposta2 %s\n", buffer);
+				bzero(buffer, BUFFER_SIZE);
+				break;
+			}
+			else {
+				printf("Resposta %s\n", buffer);
+				usleep(100000);
+				bzero(buffer, BUFFER_SIZE);
+				break;
+			} 
 			// ..
 		}
 
@@ -320,12 +327,11 @@ void *notification_thread(void *args) {
 					continue;
 				}
 				else if (strcpy(buffer,"received") != 0) {
-					printf("Caiu aqui\n");
+					printf("Resposta não recebida, reenviando notificação...\n");
 					break;
 				}
 				// ..
 			}
-			printf("Respondeu\n");
 			sockfd = session->nsockfd;
 		}
 		// ..
@@ -339,13 +345,11 @@ void *notification_thread(void *args) {
 			p->pending = p->pending - 1;
 		if (p->pending < 1)
 			destroy_notification(author->notifications, p->id);
-		//print_profile_list(profiles);
 		// ..
 
 		// Atualizando a inbox
 		cur_user->inbox.front = (cur_user->inbox.front + 1) % INBOX_SIZE;
 		// ..
-		//print_inbox(&(cur_user->inbox));
 
 		// Liberando semáforos
 		sem_post(&(cur_user->inbox.mutexC));

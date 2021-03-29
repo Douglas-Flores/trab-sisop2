@@ -54,8 +54,10 @@ int read_packet(int socket, packet *package, char *buffer) {
 
     // Lendo bytestream
     n = read(socket, buffer, BUFFER_SIZE);
-    if (n < 0) 
+    if (n < 0) {
 	    printf("ERROR reading metadata from socket\n");
+        return n;
+    }
     // ..
 
     // Montando pacote
@@ -64,6 +66,9 @@ int read_packet(int socket, packet *package, char *buffer) {
     package->length = buffer[4] | buffer[5] << 8;
     //package->timestamp = buffer [8] | buffer[9] | buffer[10] | buffer[11] | buffer [12] | buffer [13] | buffer[14] | buffer[15];
     package->_payload = payload;
+    
+    if (package->length > BUFFER_SIZE)
+        return -1;
 
     // Montando payload
     bzero(payload,128);
